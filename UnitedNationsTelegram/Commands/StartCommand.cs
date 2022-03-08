@@ -59,7 +59,9 @@ public class MainController : CommandControllerBase
                 return;
             }
 
-            var pollText = Update.Message.Text["/vote".Length..].Replace($"@{BotUserName}", "");
+
+
+            var pollText = Update.Message?.ReplyToMessage?.Text ?? Update.Message?.Text["/vote".Length..].Replace($"@{BotUserName}", "");
 
             if (pollText.Length < 3)
             {
@@ -274,4 +276,3 @@ public class CallbackDataAttribute : CommandAttribute
         return context.Update.CallbackQuery?.Data?.StartsWith(Text);
     }
 }
-
