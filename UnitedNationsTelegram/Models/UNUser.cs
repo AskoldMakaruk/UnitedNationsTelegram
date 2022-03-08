@@ -52,6 +52,10 @@ public class Vote
 public class Poll
 {
     public int Id { get; set; }
+    public long ChatId { get; set; }
+    public int MessageId { get; set; }
+    public bool IsActive { get; set; }
+
     public string Text { get; set; }
     public virtual List<Vote> Votes { get; set; }
 }
@@ -64,7 +68,7 @@ public class UNContext : IdentityDbContext<UNUser>
 
     public UNContext(DbContextOptions builder) : base(builder)
     {
-
+        Database.Migrate();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

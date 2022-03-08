@@ -28,6 +28,9 @@ hostBuilder.ConfigureAppConfiguration((hostingContext, config) =>
 var host = hostBuilder.Build();
 var bot = host.Services.GetService<ITelegramBotClient>()!;
 
+var me = bot.GetMeAsync().GetAwaiter().GetResult();
+MainController.BotUserName = me.Username;
+
 bot.SetMyCommandsAsync(new List<BotCommand>
 {
     new()
@@ -39,7 +42,12 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/vote",
         Description = "почати голосування"
-    }
+    },
+    new()
+    {
+        Command = "/close",
+        Description = "завершити голосування"
+    },
 });
 
 

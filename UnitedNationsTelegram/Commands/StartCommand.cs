@@ -11,8 +11,7 @@ using UnitedNationsTelegram.Models;
 [Priority(EndpointPriority.First)]
 public class MainController : CommandControllerBase
 {
-    public const long ChatId = -1001175710602;
-
+    public static string BotUserName;
     private readonly ITelegramBotClient bot;
     private readonly UNUser user;
     private readonly UNContext context;
@@ -26,24 +25,6 @@ public class MainController : CommandControllerBase
         this.bot = bot;
         this.user = user;
         this.context = context;
-    }
-
-    [Priority(EndpointPriority.First)]
-    [StartsWith("/state")]
-    public async Task StateMachine()
-    {
-        while (true)
-        {
-            var update = await Client.GetUpdate();
-            await Client.SendTextMessage("asfasfas");
-
-            if (update.Message?.Text == "text")
-            {
-                await Client.SendTextMessage("end");
-                return;
-            }
-        }
-
     }
 
     [Priority(EndpointPriority.First)]
@@ -78,7 +59,27 @@ public class MainController : CommandControllerBase
                 return;
             }
 
-            var pollText = Update.Message.Text["/vote".Length..];
+            var pollText = Update.Message.Text["/vote".Length..].Replace($"@{BotUserName}", "");
+
+            if (pollText.Length < 3)
+            {
+                await Client.SendTextMessage("Це занадто мале питання. Придумай щось сурйозніще.");
+                return;
+            }
+
+            var chat = Update.GetInfoFromUpdate().Chat;
+            if (chat.Type == Telegram.Bot.Types.Enums.ChatType.Private)
+            {
+                await Client.SendTextMessage("В цьому чаті неможливо розпочати голосування.");
+                return;
+            }
+
+            var activePoll = await context.Polls.FirstOrDefaultAsync(a => a.ChatId == chat.Id && a.IsActive);
+            if (activePoll != null)
+            {
+                await Client.SendTextMessage("В цьому чаті вже є активне голосування.", replyToMessageId: activePoll.MessageId);
+                return;
+            }
 
             string text = $"{user.Country.EmojiFlag}{user.Country.Name} піднімає питання:\n" +
             $"{pollText}\n\n" +
@@ -87,20 +88,42 @@ public class MainController : CommandControllerBase
             var poll = new UnitedNationsTelegram.Models.Poll()
             {
                 Text = pollText,
-                Votes = new List<Vote>()
+                Votes = new List<Vote>(),
+                ChatId = chat.Id,
+                IsActive = true
             };
             context.Polls.Add(poll);
             await context.SaveChangesAsync();
 
             var keyboard = VoteMarkup(poll.Id);
-            System.Console.WriteLine($"poll id is: {poll.Id}");
 
-            await Client.SendTextMessage(text, replyMarkup: keyboard);
+            var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
+            poll.MessageId = pollMessage.MessageId;
+            await context.SaveChangesAsync();
         }
         catch (System.Exception e)
         {
             System.Console.WriteLine(e);
             throw;
+        }
+
+    }
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/close")]
+    public async Task ClosePoll()
+    {
+        var chat = Update.GetId();
+        var poll = await context.Polls.Include(c => c.Votes).ThenInclude(c => c.Country).FirstOrDefaultAsync(a => a.ChatId == chat && a.IsActive);
+        if (poll == null)
+        {
+            await Client.SendTextMessage("В цьому чаті немає питань на голосуванні.");
+        }
+        else
+        {
+            poll.IsActive = false;
+            var results = VotesToString(poll.Votes);
+            await Client.SendTextMessage($"Результати голосування: \n{results}", replyToMessageId: poll.MessageId);
+            await context.SaveChangesAsync();
         }
 
     }
@@ -142,10 +165,7 @@ public class MainController : CommandControllerBase
         var pollMessage = Update.CallbackQuery.Message;
 
         var votes = await context.Votes.Include(a => a.Country).Where(a => a.PollId == pollId).ToListAsync();
-        var reactions = Reactions;
-        var votesText = string.Join("\n", votes.GroupBy(a => a.Reaction).Select(a =>
-           $"{reactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.EmojiFlag))}"
-        ));
+        var votesText = VotesToString(votes);
 
         string text;
         if (pollMessage.Text.Contains("Результати:"))
@@ -162,8 +182,8 @@ public class MainController : CommandControllerBase
 
     public async Task<string?> CheckUserCountry()
     {
-        var id = Update.GetUser().Id;
-        var chatUser = await bot.GetChatMemberAsync(ChatId, id);
+        var info = Update.GetInfoFromUpdate();
+        var chatUser = await bot.GetChatMemberAsync(info.Chat, info.From.Id);
         var title = GetCustomTitle(chatUser);
         if (title == null)
         {
@@ -212,6 +232,16 @@ public class MainController : CommandControllerBase
         (Reaction.Veto, "Вето 🤮"),
     };
 
+    public static readonly IReadOnlyList<(Reaction Reaction, string Text)> ResultReactions = new List<(Reaction, string)>(){
+        (Reaction.For, "За 👍"),
+        (Reaction.Against, "Проти 👎"),
+        (Reaction.Support, "Підтримали 👏"),
+        (Reaction.Condemn, "Засудили 😡"),
+        (Reaction.Absent, "Не прийшли 🤔"),
+        (Reaction.Concern, "Стурбовані 😢"),
+        (Reaction.Veto, "Наклали вето 🤮"),
+    };
+
     public static InlineKeyboardMarkup VoteMarkup(int voteId)
     {
         return new InlineKeyboardMarkup(Reactions.Select(a => new InlineKeyboardButton(a.Text)
@@ -219,6 +249,14 @@ public class MainController : CommandControllerBase
             CallbackData = $"vote_{a.Reaction}_{voteId}",
         })
         .Chunk(3));
+    }
+
+    public static string VotesToString(List<Vote> votes)
+    {
+        var votesText = string.Join("\n", votes.GroupBy(a => a.Reaction).Select(a =>
+                  $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.EmojiFlag))}"
+               ));
+        return votesText;
     }
 }
 
