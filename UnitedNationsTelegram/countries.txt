@@ -1,0 +1,193 @@
+Afghanistan	Nov 19, 1946
+Albania	Dec 14, 1955
+Algeria	Oct 8, 1962
+Andorra	July 28, 1993
+Angola	Dec 1, 1976
+Antigua and Barbuda	Nov 11, 1981
+Argentina	Oct 24, 
+Armenia	March 2, 1992
+Australia	Nov 1, 
+Austria	Dec 14, 1955
+Azerbaijan	March 2, 1992
+The Bahamas	Sept 18, 1973
+Bahrain	Sept 21, 1971
+Bangladesh	Sept 17, 1974
+Barbados	Dec 9, 1966
+Belarus	Oct 24, 
+Belgium	Dec 27, 
+Belize	Sept 25, 1981
+Benin	Sept 20, 1960
+Bhutan	Sept 21, 1971
+Bolivia	Nov 14, 
+Bosnia and Herzegovina	May 22, 1992
+Botswana	Oct 17, 1966
+Brazil	Oct 24, 
+Brunei	Sept 21, 1984
+Bulgaria	Dec 14, 1955
+Burkina Faso	Sept 20, 1960
+Burundi	Sept 18, 1962
+Cambodia	Dec 14, 1955
+Cameroon	Sept 20, 1960
+Canada	Nov 9, 
+Cape Verde	Sept 16, 1975
+Central African Republic	Sept 20, 1960
+Chad	Sept 20, 1960
+Chile	Oct 24, 
+China	Oct 25, 1971
+Colombia	Nov 5, 
+Comoros	Nov 12, 1975
+Republic of the Congo	Sept 20, 1960
+Democratic Republic of the Congo	Sept 20, 1960
+Costa Rica	Nov 2, 
+Cote d'Ivoire	Sept 20, 1960
+Croatia	May 22, 1992
+Cuba	Oct 24, 
+Cyprus	Sept 20, 1960
+Czech Republic	Jan 19, 1993
+Denmark	Oct 24, 
+Djibouti	Sept 20, 1977
+Dominica	Dec 18, 1978
+Dominican Republic	Oct 24, 
+East Timor	Sept 22, 2002
+Ecuador	Dec 21, 
+Egypt	Oct 24, 
+El Salvador	Oct 24, 
+Equatorial Guinea	Nov 12, 1968
+Eritrea	May 28, 1993
+Estonia	Sept 17, 1991
+Ethiopia	Nov 13, 
+Fiji	Oct 13, 1970
+Finland	Dec 14, 1955
+France	Oct 24, 
+Gabon	Sept 20, 1960
+The Gambia	Sept 21, 1965
+Georgia	July 31, 1992
+Germany	Sept 18, 1973
+Ghana	March 8, 1957
+Greece	Oct 25, 
+Grenada	Sept 17, 1974
+Guatemala	Nov 21, 
+Guinea	Dec 12, 1958
+Guinea-Bissau	Sept 17, 1974
+Guyana	Sept 20, 1966
+Haiti	Oct 24, 
+Honduras	Dec 17, 
+Hungary	Dec 14, 1955
+Iceland	Nov 19, 1946
+India	Oct 30, 
+Indonesia	Sept 28, 1950
+Iran	Oct 24, 
+Iraq	Dec 21, 
+Ireland	Dec 14, 1955
+Israel	May 11, 1949
+Italy	Dec 14, 1955
+Jamaica	Sept 18, 1962
+Japan	Dec 18, 1956
+Jordan	Dec 14, 1955
+Kazakhstan	March 2, 1992
+Kenya	Dec 16, 1963
+Kiribati	Sept 14, 1999
+Korea, North	Dec 17, 1991
+Korea, South	Dec 17, 1991
+Kuwait	May 14, 1964
+Kyrgyzstan	March 2, 1992
+Laos	Dec 14, 1955
+Latvia	Sept 17, 1991
+Lebanon	Oct 24, 
+Lesotho	Oct 17, 1966
+Liberia	Nov 2, 
+Libya	Dec 14, 1955
+Liechtenstein	Sept 18, 1990
+Lithuania	Sept 17, 1991
+Luxembourg	Oct 24, 
+Macedonia	April 8, 1993
+Madagascar	Sept 20, 1960
+Malawi	Dec 1, 1964
+Malaysia	Sept 17, 1957
+Maldives	Sept 21, 1965
+Mali	Sept 28, 1960
+Malta	Dec 1, 1964
+Marshall Islands	Sept 17, 1991
+Mauritania	Oct 27, 1961
+Mauritius	April 24, 1968
+Mexico	Nov 7, 
+Micronesia, Federated States of	Sept 17, 1991
+Moldova	March 2, 1992
+Monaco	May 28, 1993
+Mongolia	Oct 27, 1961
+Montenegro	June 28, 2006
+Morocco	Nov 12, 1956
+Mozambique	Sept 16, 1975
+Myanmar (Burma)	April 19, 1948
+Namibia	April 23, 1990
+Nauru	Sept 14, 1999
+Nepal	Dec 14, 1955
+Netherlands	Dec 10, 
+New Zealand	Oct 24, 
+Nicaragua	Oct 24, 
+Niger	Sept 20, 1960
+Nigeria	Oct 7, 1960
+Norway	Nov 27, 
+Oman	Oct 7, 1971
+Pakistan	Sept 30, 1947
+Palau	Dec 15, 1994
+Panama	Nov 13, 
+Papua New Guinea	Oct 10, 1975
+Paraguay	Oct 24, 
+Peru	Oct 31, 
+Philippines	Oct 24, 
+Poland	Oct 24, 
+Portugal	Dec 14, 1955
+Qatar	Sept 21, 1977
+Romania	Dec 14, 1955
+Russia	Oct 24, 
+Rwanda	Sept 18, 1962
+Saint Kitts and Nevis	Sept 23, 1983
+Saint Lucia	Sept 18, 1979
+Saint Vincent and the Grenadines	Sept. 16, 1980
+Samoa	Dec 15, 1976
+San Marino	March 2, 1992
+Sao Tome and Principe	Sept 16, 1975
+Saudi Arabia	Oct 24, 1945
+Senegal	Sept 28, 1945
+Serbia	Nov 1, 2000
+Seychelles	Sept 21, 1976
+Sierra Leone	Sept 27, 1961
+Singapore	Sept 21, 1965
+Slovakia	Jan 19, 1993
+Slovenia	May 22, 1992
+Solomon Islands	Sept 19, 1978
+Somalia	Sept 20, 1960
+South Africa	Nov 7, 
+South Sudan	July 14, 2011
+Spain	Dec 14, 1955
+Sri Lanka	Dec 14, 1955
+Sudan	Nov 12, 1956
+Suriname	Dec 4, 1975
+Swaziland	Sept 24, 1968
+Sweden	Nov 19, 1946
+Switzerland	Sept 10, 2002
+Syria	Oct 24, 
+Tajikistan	March 2, 1992
+Tanzania	Dec 14, 1961
+Thailand	Dec 16, 1946
+Togo	Sept 20, 1960
+Tonga	Sept 14, 1999
+Trinidad and Tobago	Sept 18, 1962
+Tunisia	Nov 12, 1956
+Turkey	Oct 24, 
+Turkmenistan	March 2, 1992
+Tuvalu	Sept 5, 2000
+Uganda	Oct 25, 1962
+Ukraine	Oct 24, 
+United Arab Emirates	Dec 9, 1971
+United Kingdom	Oct 24, 
+United States of America	Oct 24, 
+Uruguay	Dec 18, 1945
+Uzbekistan	March 2, 1992
+Vanuatu	Sept 15, 1981
+Venezuela	Nov 15, 
+Vietnam	Sept 20, 1977
+Yemen	Sept 30, 1947
+Zambia	Dec 1, 1964
+Zimbabwe	Aug 25, 1980
