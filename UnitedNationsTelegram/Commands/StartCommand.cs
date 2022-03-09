@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using BotFramework.Abstractions;
 using BotFramework.Extensions;
 using BotFramework.Services.Commands;
@@ -110,6 +111,7 @@ public class MainController : CommandControllerBase
         }
 
     }
+
     [Priority(EndpointPriority.First)]
     [StartsWith("/close")]
     public async Task ClosePoll()
@@ -182,6 +184,43 @@ public class MainController : CommandControllerBase
         await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup);
     }
 
+    // [Priority(EndpointPriority.First)]
+    // [StartsWith("/promote")]
+    // [Admin]
+    // public async Task SetTitle()
+    // {
+    //     var promoted = Update.Message?.ReplyToMessage?.From;
+    //     var chat = Update.GetInfoFromUpdate().Chat;
+
+    //     if (promoted == null)
+    //     {
+    //         await Client.SendTextMessage("не зрозумів кого промотити. а ну пішов звудси");
+    //         return;
+    //     }
+
+    //     var countryName = Update.Message?.Text?["/promote".Length..].Trim();
+    //     if (countryName == null || context.Countries.FirstOrDefault(c => EF.Functions.ILike(c.Name, countryName)) is not { } country)
+    //     {
+    //         await Client.SendTextMessage("не зрозумів якої країни ти посол блін");
+    //         return;
+    //     }
+
+
+    //     await bot.PromoteChatMemberAsync(chat, promoted.Id);
+    //     await bot.SetChatAdministratorCustomTitleAsync(chat, promoted.Id, country.Name.ToLower());
+    //     await Client.SendTextMessage($"{promoted.Username} тепер посол {country.Name}{country.EmojiFlag}");
+    // }
+
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/members")]
+    public async Task Members()
+    {
+        var chat = Update.GetInfoFromUpdate().Chat;
+        var admins = await bot.GetChatAdministratorsAsync(chat);
+var builder = new stringbuilder
+        var members =   context.Countries.FirstOrDefault(a => EF.Functions.ILike(a.Name, title));
+    }
+
     public async Task<string?> CheckUserCountry()
     {
         var info = Update.GetInfoFromUpdate();
@@ -221,8 +260,9 @@ public class MainController : CommandControllerBase
         {
             return owner.CustomTitle;
         }
+
         return null;
-    }
+    }  
 
     public static List<(Reaction Reaction, string Text)> Reactions => new List<(Reaction, string)>(){
         (Reaction.For, "За 👍"),
@@ -274,5 +314,14 @@ public class CallbackDataAttribute : CommandAttribute
     public override bool? Suitable(UpdateContext context)
     {
         return context.Update.CallbackQuery?.Data?.StartsWith(Text);
+    }
+}
+
+public class AdminAttribute : CommandAttribute
+{
+    public override bool? Suitable(UpdateContext context)
+    {
+        var userId = context.Update.GetUser()?.Id;
+        return userId == 249258727 || userId == 249122421;
     }
 }
