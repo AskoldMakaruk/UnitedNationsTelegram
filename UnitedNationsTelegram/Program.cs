@@ -48,6 +48,12 @@ bot.SetMyCommandsAsync(new List<BotCommand>
         Command = "/close",
         Description = "завершити голосування"
     },
+    new ()
+    {
+        Command = "/members",
+        Description = "усі представники країн в цьому чаті"
+        
+    }
 });
 
 
