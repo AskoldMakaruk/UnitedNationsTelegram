@@ -68,6 +68,17 @@ public class UNContext : IdentityDbContext<UNUser>
         Database.Migrate();
     }
 
+    public async Task<Poll?> GetActivePoll(long chatId)
+    {
+        return await Polls
+            .Include(a => a.OpenedBy)
+            .ThenInclude(a => a.Country)
+            .Include(c => c.Votes)
+            .ThenInclude(c => c.Country)
+            .ThenInclude(c => c.Country)
+            .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chatId && a.IsActive && a.MessageId != 0);
+    }
+
     public async Task<List<UserCountry>> MainMembers(long chat)
     {
         return UserCountries.Include(a => a.Votes).Include(a => a.Country).Where(a => a.ChatId == chat).OrderByDescending(a => a.Votes.Count).Take(5).ToList();

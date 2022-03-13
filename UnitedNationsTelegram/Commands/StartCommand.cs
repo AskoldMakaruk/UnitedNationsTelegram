@@ -114,12 +114,7 @@ public class MainController : CommandControllerBase
     public async Task ClosePoll()
     {
         var chat = Update.GetInfoFromUpdate().Chat!.Id;
-        var poll = await context.Polls
-            .Include(a => a.OpenedBy)
-            .Include(c => c.Votes)
-            .ThenInclude(c => c.Country)
-            .ThenInclude(c => c.Country)
-            .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chat && a.IsActive && a.MessageId != 0);
+        var poll = await context.GetActivePoll(chat);
 
         if (poll == null)
         {
@@ -155,6 +150,22 @@ public class MainController : CommandControllerBase
             var s = string.Join(",", mainMemberNotVoted.Select(a => $"{a.Country.EmojiFlag}{a.Country.Name} - @{a.User.UserName}"));
             await Client.SendTextMessage($"Не виконані умови закриття:\nКількість голосів менша за необхідну ({poll.Votes.Count} < 8)\nНе всі основні країни проголосували ({s}) ", replyToMessageId: poll.MessageId);
         }
+    }
+
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/active")]
+    public async Task ActivePoll()
+    {
+        var chat = Update.GetInfoFromUpdate().Chat!.Id;
+        var poll = await context.GetActivePoll(chat);
+
+        if (poll == null)
+        {
+            await Client.SendTextMessage("В цьому чаті немає питань на голосуванні.");
+            return;
+        }
+
+        await SendPoll(poll);
     }
 
     [Priority(EndpointPriority.First)]
@@ -214,7 +225,6 @@ public class MainController : CommandControllerBase
 
         await Client.SendTextMessage($"{country.EmojiFlag}{country.Name}");
     }
-
 
     [Priority(EndpointPriority.First)]
     [StartsWith("/ping")]
@@ -344,10 +354,16 @@ public class MainController : CommandControllerBase
     public async Task SendPoll(Poll poll)
     {
         var country = poll.OpenedBy;
+        var votesText = VotesToString(poll.Votes);
 
         var text = $"{country.Country.EmojiFlag}{country.Country.Name} піднімає питання:\n" +
                    $"{poll.Text}\n\n" +
                    $"Голосуємо панове.";
+
+        if (poll.Votes.Count != 0)
+        {
+            text += $"\nРезультати:\n{votesText}";
+        }
 
         var keyboard = VoteMarkup(poll.Id);
         var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
