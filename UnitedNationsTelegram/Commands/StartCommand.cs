@@ -227,6 +227,19 @@ public class MainController : CommandControllerBase
     }
 
     [Priority(EndpointPriority.First)]
+    [StartsWith("/roll_member")]
+    public async Task RollMember()
+    {
+        var chat = Update.GetInfoFromUpdate().Chat.Id;
+        var member = context.UserCountries.Include(a => a.Country).Include(a => a.User)
+            .Where(a => a.ChatId == chat)
+            .ToList()
+            .OrderBy(a => Random.Shared.Next()).First();
+
+        await Client.SendTextMessage($"{member.Country.EmojiFlag}{member.Country.Name} - @{member.User.UserName}");
+    }
+
+    [Priority(EndpointPriority.First)]
     [StartsWith("/ping")]
     public async Task Ping()
     {

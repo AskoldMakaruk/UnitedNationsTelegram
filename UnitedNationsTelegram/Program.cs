@@ -82,7 +82,12 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/roll_country",
         Description = "випадкова незанята країна"
-    }
+    },
+    new ()
+    {
+        Command = "/roll_member",
+        Description = "випадковий член РадБезу"
+    },
 });
 
 
