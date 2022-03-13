@@ -197,6 +197,25 @@ public class MainController : CommandControllerBase
         await Client.SendTextMessage(builder.ToString(), parseMode: ParseMode.Html);
     }
 
+    [Priority(EndpointPriority.Last)]
+    [StartsWith("/roll")]
+    public async Task Roll()
+    {
+        await Client.SendTextMessage($"<b>{Random.Shared.Next(0, 100)}</b>", parseMode: ParseMode.Html, replyToMessageId: Update.Message.MessageId);
+    }
+
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/roll_country")]
+    public async Task RollCountry()
+    {
+        var chat = Update.GetInfoFromUpdate().Chat.Id;
+        var country = context.Countries.Include(a => a.Users).Where(a => a.Users.All(a => a.ChatId != chat))
+            .ToList().OrderBy(a => Random.Shared.Next()).First();
+
+        await Client.SendTextMessage($"{country.EmojiFlag}{country.Name}");
+    }
+
+
     [Priority(EndpointPriority.First)]
     [StartsWith("/ping")]
     public async Task Ping()

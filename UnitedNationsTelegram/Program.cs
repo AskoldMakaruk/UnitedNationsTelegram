@@ -67,6 +67,16 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/ping",
         Description = "викликати членів РадБезу"
+    },
+    new ()
+    {
+        Command = "/roll",
+        Description = "випадкове число 1-100"
+    },
+    new ()
+    {
+        Command = "/roll_country",
+        Description = "випадкова незанята країна"
     }
 });
 
