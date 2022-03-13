@@ -1,4 +1,5 @@
 ﻿using BotFramework.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -6,6 +7,7 @@ using Serilog.Events;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using UnitedNationsTelegram;
+using UnitedNationsTelegram.Models;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -27,6 +29,9 @@ hostBuilder.ConfigureAppConfiguration((hostingContext, config) =>
 });
 var host = hostBuilder.Build();
 var bot = host.Services.GetService<ITelegramBotClient>()!;
+
+var db = host.Services.GetService<UNContext>();
+db.Database.Migrate();
 
 var me = bot.GetMeAsync().GetAwaiter().GetResult();
 MainController.BotUserName = me.Username;
