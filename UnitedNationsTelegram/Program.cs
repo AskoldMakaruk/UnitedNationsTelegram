@@ -47,6 +47,11 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/vote",
         Description = "почати голосування"
+    }, 
+    new()
+    {
+        Command = "/active",
+        Description = "показати активне голосування"
     },
     new()
     {
