@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.RegularExpressions;
 using BotFramework.Abstractions;
@@ -5,11 +6,13 @@ using BotFramework.Extensions;
 using BotFramework.Services.Commands;
 using BotFramework.Services.Commands.Attributes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using UnitedNationsTelegram.Models;
+using Poll = UnitedNationsTelegram.Models.Poll;
 
 [Priority(EndpointPriority.First)]
 public class MainController : CommandControllerBase
@@ -54,15 +57,13 @@ public class MainController : CommandControllerBase
     {
         try
         {
-            var message = await CheckUserCountry();
-            if (message != null)
+            var country = await CheckUserCountry();
+            if (country == null)
             {
-                await Client.SendTextMessage(message);
                 return;
             }
 
-
-            var pollText = Update.Message?.ReplyToMessage?.Text ?? Update.Message?.Text["/vote".Length..].Replace($"@{BotUserName}", "");
+            var pollText = Update.Message?.ReplyToMessage?.Text ?? Update.Message?.Text["/vote".Length..].Replace($"@{BotUserName}", "").Trim();
 
             if (pollText.Length < 3)
             {
@@ -77,32 +78,29 @@ public class MainController : CommandControllerBase
                 return;
             }
 
-            var activePoll = await context.Polls.FirstOrDefaultAsync(a => a.ChatId == chat.Id && a.IsActive);
-            if (activePoll != null)
-            {
-                await Client.SendTextMessage("В цьому чаті вже є активне голосування.", replyToMessageId: activePoll.MessageId);
-                return;
-            }
-
-            string text = $"{user.Country.EmojiFlag}{user.Country.Name} піднімає питання:\n" +
-                          $"{pollText}\n\n" +
-                          $"Голосуємо панове.";
 
             var poll = new UnitedNationsTelegram.Models.Poll()
             {
                 Text = pollText,
                 Votes = new List<Vote>(),
-                ChatId = chat.Id,
+                OpenedBy = country,
                 IsActive = true
             };
             context.Polls.Add(poll);
             await context.SaveChangesAsync();
 
-            var keyboard = VoteMarkup(poll.Id);
+            string text;
+            var activePoll = await context.Polls.Include(a => a.OpenedBy).Where(a => a.IsActive && a.OpenedBy.ChatId == chat.Id && a.MessageId != 0).CountAsync();
+            if (activePoll != 0)
+            {
+                text = $"В цьому чаті вже є активне голосування.\nТвоє питання поставлено у чергу під номером <b>{activePoll}</b>";
 
-            var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
-            poll.MessageId = pollMessage.MessageId;
-            await context.SaveChangesAsync();
+                await Client.SendTextMessage(text, parseMode: ParseMode.Html);
+            }
+            else
+            {
+                await SendPoll(poll);
+            }
         }
         catch (System.Exception e)
         {
@@ -115,18 +113,121 @@ public class MainController : CommandControllerBase
     [StartsWith("/close")]
     public async Task ClosePoll()
     {
-        var chat = Update.GetId();
-        var poll = await context.Polls.Include(c => c.Votes).ThenInclude(c => c.Country).FirstOrDefaultAsync(a => a.ChatId == chat && a.IsActive);
+        var chat = Update.GetInfoFromUpdate().Chat!.Id;
+        var poll = await context.Polls
+            .Include(a => a.OpenedBy)
+            .Include(c => c.Votes)
+            .ThenInclude(c => c.Country)
+            .ThenInclude(c => c.Country)
+            .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chat && a.IsActive && a.MessageId != 0);
+
         if (poll == null)
         {
             await Client.SendTextMessage("В цьому чаті немає питань на голосуванні.");
+            return;
         }
-        else
+
+        var mainMembers = await context.MainMembers(chat);
+        var mainMemberNotVoted = mainMembers.Where(a => a.Votes.All(c => c.PollId != poll.Id)).ToList();
+        var mainMembersVoted = mainMemberNotVoted.Count == 0;
+        var enoughVotes = poll.Votes.Count >= 8;
+
+        if (enoughVotes || mainMembersVoted)
         {
             poll.IsActive = false;
             var results = VotesToString(poll.Votes);
-            await Client.SendTextMessage($"Результати голосування: \n{results}", replyToMessageId: poll.MessageId);
+            await Client.SendTextMessage($"Питання: {poll.Text}\n\nРезультати: \n{results}", replyToMessageId: poll.MessageId);
             await context.SaveChangesAsync();
+
+            var nextPoll = await context.Polls.Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+                .OrderByDescending(a => a.Created)
+                .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chat && a.IsActive);
+
+            if (nextPoll == null)
+            {
+                return;
+            }
+
+            await SendPoll(nextPoll);
+        }
+        else
+        {
+            var s = string.Join(",", mainMemberNotVoted.Select(a => $"{a.Country.EmojiFlag}{a.Country.Name} - @{a.User.UserName}"));
+            await Client.SendTextMessage($"Не виконані умови закриття:\nКількість голосів менша за необхідну ({poll.Votes.Count} < 8)\nНе всі основні країни проголосували ({s}) ", replyToMessageId: poll.MessageId);
+        }
+    }
+
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/polls")]
+    public async Task Polls()
+    {
+        var polls = await context.Polls
+            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+            .Include(a => a.Votes)
+            .ThenInclude(a => a.Country)
+            .OrderByDescending(a => a.Created).Take(10).ToListAsync();
+
+        var builder = new StringBuilder();
+        builder.AppendLine($"Останні {polls.Count} питань:");
+
+        var future = polls.Where(a => a.IsActive && a.MessageId == 0).ToList();
+        var present = polls.Where(a => a.IsActive && a.MessageId != 0).ToList();
+        var past = polls.Where(a => !a.IsActive).ToList();
+
+        AddPollList(future, "<b>Черга:</b>");
+        AddPollList(present, "<b>Активні:</b>");
+        AddPollList(past, "<b>Архів:</b>");
+
+        void AddPollList(List<Poll> list, string name)
+        {
+            if (list.Count == 0)
+            {
+                return;
+            }
+
+            builder.AppendLine(name);
+            foreach (var poll in list)
+            {
+                builder.AppendLine($"{poll.OpenedBy.Country.EmojiFlag}<b>{poll.OpenedBy.Country.Name}</b> {poll.Created}\n{poll.Text}");
+            }
+
+            builder.AppendLine();
+        }
+
+        await Client.SendTextMessage(builder.ToString(), parseMode: ParseMode.Html);
+    }
+
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/ping")]
+    public async Task Ping()
+    {
+        var chatId = Update.GetInfoFromUpdate().Chat.Id;
+        var county = await CheckUserCountry();
+        if (county == null)
+        {
+            return;
+        }
+
+        var type = Update.Message?.Text?["/ping".Length..]?.Trim();
+        var answer = type switch
+        {
+            "all" => await All(),
+            "main" => await M(),
+            _ => $"параметри команди ping \n<b>all<\b> - викликати усіх членів РадБезу ООН\n<b>main<\b> - викликати головних членів РадБезу ООН"
+        };
+
+        await Client.SendTextMessage(answer, parseMode: ParseMode.Html);
+
+        async Task<string> All()
+        {
+            var members = await context.UserCountries.Include(a => a.User).Include(a => a.Country).Where(a => a.ChatId == chatId).ToListAsync();
+            return "Увага усім членам РадБезу ООН\n" + string.Join("\n", members.Select(a => $"{a.Country.EmojiFlag}{a.Country.Name} @{a.User.UserName}"));
+        }
+
+        async Task<string> M()
+        {
+            var members = await context.MainMembers(chatId);
+            return "Увага основним членам РадБезу ООН\n" + string.Join("\n", members.Select(a => $"{a.Country.EmojiFlag}{a.Country.Name} @{a.User.UserName}"));
         }
     }
 
@@ -138,22 +239,21 @@ public class MainController : CommandControllerBase
         var reaction = Enum.Parse<Reaction>(data[1]);
         var pollId = int.Parse(data[2]);
 
-        var message = await CheckUserCountry();
-        if (message != null)
+        var country = await CheckUserCountry();
+        if (country == null)
         {
-            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, message);
             return;
         }
 
-        var country = user.Country;
-        var poll = await context.Polls.Include(a => a.Votes).FirstOrDefaultAsync(a => a.Id == pollId);
+        var poll = await context.Polls.Include(a => a.Votes).ThenInclude(a => a.Country)
+            .FirstOrDefaultAsync(a => a.Id == pollId);
 
-        var vote = poll.Votes.FirstOrDefault(a => a.CountryId == country.Id);
+        var vote = poll.Votes.FirstOrDefault(a => a.UserCountryId == country.Id);
         if (vote == null)
         {
             vote = new Vote()
             {
-                CountryId = country.Id,
+                UserCountryId = country.Id,
                 PollId = poll.Id
             };
 
@@ -180,104 +280,103 @@ public class MainController : CommandControllerBase
         }
 
         await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup);
+        await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ваш голос прийнято!");
     }
-
-    // [Priority(EndpointPriority.First)]
-    // [StartsWith("/promote")]
-    // [Admin]
-    // public async Task SetTitle()
-    // {
-    //     var promoted = Update.Message?.ReplyToMessage?.From;
-    //     var chat = Update.GetInfoFromUpdate().Chat;
-
-    //     if (promoted == null)
-    //     {
-    //         await Client.SendTextMessage("не зрозумів кого промотити. а ну пішов звудси");
-    //         return;
-    //     }
-
-    //     var countryName = Update.Message?.Text?["/promote".Length..].Trim();
-    //     if (countryName == null || context.Countries.FirstOrDefault(c => EF.Functions.ILike(c.Name, countryName)) is not { } country)
-    //     {
-    //         await Client.SendTextMessage("не зрозумів якої країни ти посол блін");
-    //         return;
-    //     }
-
-
-    //     await bot.PromoteChatMemberAsync(chat, promoted.Id);
-    //     await bot.SetChatAdministratorCustomTitleAsync(chat, promoted.Id, country.Name.ToLower());
-    //     await Client.SendTextMessage($"{promoted.Username} тепер посол {country.Name}{country.EmojiFlag}");
-    // }
 
     [Priority(EndpointPriority.First)]
     [StartsWith("/members")]
     public async Task Members()
     {
         var chat = Update.GetInfoFromUpdate().Chat;
-        var admins = await bot.GetChatAdministratorsAsync(chat);
+        // var admins = await bot.GetChatAdministratorsAsync(chat);
         var builder = new StringBuilder();
-        var polls = await context.Polls
-            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Users)
+        var users = await context.UserCountries
+            .Include(a => a.Country)
+            .Include(a => a.Votes).ThenInclude(a => a.Poll)
+            .Include(a => a.User)
             .Where(a => a.ChatId == chat.Id).ToListAsync();
 
-        // var members = context.Countries.FirstOrDefault(a => EF.Functions.ILike(a.Name, title));
+        var polls = users.SelectMany(a => a.Votes.Select(a => a.Poll)).DistinctBy(a => a.Id).ToList();
+        var countries = users.Select(a => a.Country).DistinctBy(a => a.Id).ToList();
 
-        var countries = polls.SelectMany(a => a.Votes.Select(a => a.Country)).DistinctBy(a => a.EmojiFlag).ToList();
         builder.AppendFormat("В чаті <b>{0}</b> проведено <b>{1}</b> голосовань у яких було подано <b>{2}</b> голосів <b>{3}</b> країнами\n\n",
             chat.Title, polls.Count, polls.SelectMany(a => a.Votes).Count(),
             countries.Count
         );
-        builder.AppendLine("Представники усіх країн:");
 
-        foreach (var country in countries)
+        var i = 0;
+        builder.AppendLine("Основні члени РадБезу:");
+        foreach (var userCountry in users.OrderByDescending(a => a.Votes.Count))
         {
-            var reprs = admins.Where(a => country.Users.Any(c => c.Id == a.User.Id)).ToList();
-
-            builder.Append($"{country.EmojiFlag}{country.Name} наразі ");
-            if (reprs.Count == 0)
+            if (i == 4)
             {
-                builder.Append("немає жодного представника(");
-            }
-            else if (reprs.Count == 1)
-            {
-                var user = reprs[0].User;
-                builder.AppendLine($"гордо представляється <b>{user.Username}</b>");
-                builder.AppendLine($"усього голосів: <b>{country.Votes.Count}</b>");
-                // builder.AppendLine($"піднято питань **{}**", polls.Count(a=>a.))
+                builder.AppendLine($"\nУсі інші члени РадБезу:");
             }
 
-            builder.AppendLine();
+            builder.AppendLine($"{userCountry.Country.EmojiFlag}{userCountry.Country.Name} представник: <b>{userCountry.User.UserName} - {userCountry.Votes.Count}</b>");
+
+            i++;
         }
 
         var result = builder.ToString();
         await Client.SendTextMessage(result, parseMode: ParseMode.Html);
     }
 
-    public async Task<string?> CheckUserCountry()
+    public async Task SendPoll(Poll poll)
     {
+        var country = poll.OpenedBy;
+
+        var text = $"{country.Country.EmojiFlag}{country.Country.Name} піднімає питання:\n" +
+                   $"{poll.Text}\n\n" +
+                   $"Голосуємо панове.";
+
+        var keyboard = VoteMarkup(poll.Id);
+        var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
+        poll.MessageId = pollMessage.MessageId;
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<UserCountry?> CheckUserCountry()
+    {
+        string message = null;
         var info = Update.GetInfoFromUpdate();
         var chatUser = await bot.GetChatMemberAsync(info.Chat, info.From.Id);
         var title = GetCustomTitle(chatUser);
         if (title == null)
         {
-            return "Ви не є членом РадБезу ООН. Зверністься до адміністрації для вступу до Ради Безпеки ООН.";
+            message = "Ви не є членом РадБезу ООН. Зверністься до адміністрації для вступу до Ради Безпеки ООН.";
         }
 
-        if (user.CountryId == null)
+        user.Countries = await context.UserCountries.Include(a => a.Country).Include(a => a.Votes).Where(a => a.ChatId == info.Chat.Id && a.UserId == user.Id).ToListAsync();
+        await context.Entry(user).Collection(a => a.Countries).LoadAsync();
+        var userCountry = user.Countries.FirstOrDefault(a => a.ChatId == info.Chat.Id);
+        if (userCountry == null)
         {
             var country = context.Countries.FirstOrDefault(a => EF.Functions.ILike(a.Name, title));
             if (country == null)
             {
-                return $"Не існує такої країни як {title}, довбень.";
+                message = $"Не існує такої країни як {title}, довбень.";
             }
 
-            user.Country = country;
+            user.Countries.Add(new UserCountry()
+            {
+                Country = country,
+                User = user,
+                ChatId = info.Chat.Id
+            });
             await context.SaveChangesAsync();
         }
 
-        if (user.Country == null)
+        if (message == null) return userCountry;
+
+        if (Update.CallbackQuery != null)
         {
-            user.Country = await context.Countries.FindAsync(user.CountryId);
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, message);
+        }
+
+        if (Update.Message != null)
+        {
+            await Client.SendTextMessage(message);
         }
 
         return null;
@@ -298,7 +397,7 @@ public class MainController : CommandControllerBase
         return null;
     }
 
-    public static List<(Reaction Reaction, string Text)> Reactions => new List<(Reaction, string)>()
+    public static List<(Reaction Reaction, string Text)> Reactions => new()
     {
         (Reaction.For, "За 👍"),
         (Reaction.Against, "Проти 👎"),
@@ -332,7 +431,7 @@ public class MainController : CommandControllerBase
     public static string VotesToString(List<Vote> votes)
     {
         var votesText = string.Join("\n", votes.GroupBy(a => a.Reaction).Select(a =>
-            $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.EmojiFlag))}"
+            $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
         ));
         return votesText;
     }

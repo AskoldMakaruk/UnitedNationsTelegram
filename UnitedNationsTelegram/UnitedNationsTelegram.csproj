@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BotFramework" Version="1.0.0-alpha-67" />
-    <PackageReference Include="BotFramework.Identity" Version="1.0.0-alpha-67" />
+    <PackageReference Include="BotFramework" Version="1.0.0-alpha-68" />
+    <PackageReference Include="BotFramework.Identity" Version="1.0.0-alpha-68" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -23,7 +23,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
     <PackageReference Include="Telegram.Bot" Version="17.0.0" />
     <PackageReference Include="Telegram.Bot.Extensions.Polling" Version="1.0.1" />
-    <PackageReference Include="FluentCache" Version="4.0.0.2" />
+    
   </ItemGroup>
 
   <ItemGroup>

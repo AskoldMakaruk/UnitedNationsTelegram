@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using UnitedNationsTelegram.Models;
@@ -11,9 +12,10 @@ using UnitedNationsTelegram.Models;
 namespace UnitedNationsTelegram.Migrations
 {
     [DbContext(typeof(UNContext))]
-    partial class UNContextModelSnapshot : ModelSnapshot
+    [Migration("20220313183856_NewModel")]
+    partial class NewModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,8 +151,8 @@ namespace UnitedNationsTelegram.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -158,16 +160,11 @@ namespace UnitedNationsTelegram.Migrations
                     b.Property<int>("MessageId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("OpenedById")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OpenedById");
 
                     b.ToTable("Polls");
                 });
@@ -280,17 +277,6 @@ namespace UnitedNationsTelegram.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("UnitedNationsTelegram.Models.Poll", b =>
-                {
-                    b.HasOne("UnitedNationsTelegram.Models.UserCountry", "OpenedBy")
-                        .WithMany("OpenedPolls")
-                        .HasForeignKey("OpenedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OpenedBy");
-                });
-
             modelBuilder.Entity("UnitedNationsTelegram.Models.UserCountry", b =>
                 {
                     b.HasOne("UnitedNationsTelegram.Models.Country", "Country")
@@ -346,8 +332,6 @@ namespace UnitedNationsTelegram.Migrations
 
             modelBuilder.Entity("UnitedNationsTelegram.Models.UserCountry", b =>
                 {
-                    b.Navigation("OpenedPolls");
-
                     b.Navigation("Votes");
                 });
 #pragma warning restore 612, 618
