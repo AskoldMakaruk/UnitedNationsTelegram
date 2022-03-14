@@ -355,7 +355,7 @@ public class MainController : CommandControllerBase
         var votesText = VotesToString(poll.Votes);
 
         var text = $"{country.Country.EmojiFlag}{country.Country.Name} піднімає питання:\n" +
-                   $"{SecurityElement.Escape(poll.Text)}\n\n" +
+                   $"{poll.Text}\n\n" +
                    $"Голосуємо панове.";
 
         if (poll.Votes.Count != 0)
@@ -370,7 +370,7 @@ public class MainController : CommandControllerBase
 
         if (!canClose)
         {
-            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} < 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
+            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} \\< 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
         }
 
 
