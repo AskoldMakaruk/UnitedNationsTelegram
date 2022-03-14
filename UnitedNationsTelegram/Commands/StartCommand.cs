@@ -124,16 +124,14 @@ public class MainController : CommandControllerBase
             return;
         }
 
-        var mainMembers = await context.MainMembers(ChatId);
-        var mainMemberNotVoted = mainMembers.Where(a => a.Votes.All(c => c.PollId != poll.Id)).ToList();
-        var mainMembersVoted = mainMemberNotVoted.Count == 0;
-        var enoughVotes = poll.Votes.Count >= 8;
+        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
+        var canClose = poll.Votes.Count >= 8 || mainMemberNotVoted.Count == 0;
 
-        if (enoughVotes || mainMembersVoted)
+        if (canClose)
         {
             poll.IsActive = false;
             var results = VotesToString(poll.Votes);
-            await Client.SendTextMessage($"Питання: {poll.Text}\n\nРезультати: \n{results}", replyToMessageId: poll.MessageId);
+            await Client.SendTextMessage($"Питання: {poll.Text}\n\nГолоси: \n{results}", replyToMessageId: poll.MessageId);
             await context.SaveChangesAsync();
 
             var nextPoll = await context.Polls.Include(a => a.OpenedBy).ThenInclude(a => a.Country)
@@ -363,13 +361,18 @@ public class MainController : CommandControllerBase
 
         if (poll.Votes.Count != 0)
         {
-            text += $"\nРезультати:\n{votesText}";
+            text += $"\nГолоси:\n{votesText}";
         }
+
+        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
+        var canClose = poll.Votes.Count >= 8 || mainMemberNotVoted.Count == 0;
+
+        text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>";
 
         var keyboard = VoteMarkup(poll.Id);
         if (Update.Message != null)
         {
-            var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
+            var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard, parseMode: ParseMode.Html);
             poll.MessageId = pollMessage.MessageId;
         }
 
@@ -377,7 +380,7 @@ public class MainController : CommandControllerBase
         {
             var pollMessage = Update.CallbackQuery.Message;
 
-            await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup);
+            await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup, parseMode: ParseMode.Html);
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ваш голос прийнято!");
         }
 
@@ -395,10 +398,14 @@ public class MainController : CommandControllerBase
             message = "Ви не є членом РадБезу ООН. Зверністься до адміністрації для вступу до Ради Безпеки ООН.";
         }
 
-        user.Countries = await context.UserCountries.Include(a => a.Country).Include(a => a.Votes).Where(a => a.ChatId == info.Chat.Id && a.UserId == user.Id).ToListAsync();
-        await context.Entry(user).Collection(a => a.Countries).LoadAsync();
-        var userCountry = user.Countries.FirstOrDefault(a => a.ChatId == info.Chat.Id);
-        if (userCountry == null)
+        user.Countries = await context.UserCountries
+            .Include(a => a.Country).Include(a => a.Votes)
+            .Where(a => a.ChatId == info.Chat.Id && a.UserId == user.Id).ToListAsync();
+
+        var userCountry = user.Countries
+            .FirstOrDefault(a => a.ChatId == info.Chat.Id && string.Equals(a.Country.Name, title, StringComparison.OrdinalIgnoreCase));
+
+        if (userCountry == null && title != null)
         {
             var country = context.Countries.FirstOrDefault(a => EF.Functions.ILike(a.Name, title));
             if (country == null)
@@ -412,6 +419,13 @@ public class MainController : CommandControllerBase
                 User = user,
                 ChatId = ChatId
             });
+
+            foreach (var toRemove in user.Countries.Where(a => a.ChatId == info.Chat.Id && !string.Equals(a.Country.Name, title, StringComparison.OrdinalIgnoreCase)).ToList())
+            {
+                user.Countries.Remove(toRemove);
+                context.Remove(toRemove);
+            }
+
             await context.SaveChangesAsync();
         }
 
@@ -419,7 +433,7 @@ public class MainController : CommandControllerBase
 
         if (Update.CallbackQuery != null)
         {
-            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, message);
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, message, true);
         }
 
         if (Update.Message != null)
