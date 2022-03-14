@@ -287,7 +287,9 @@ public class MainController : CommandControllerBase
             return;
         }
 
-        var poll = await context.Polls.Include(a => a.Votes).ThenInclude(a => a.Country)
+        var poll = await context.Polls
+            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+            .Include(a => a.Votes).ThenInclude(a => a.Country)
             .FirstOrDefaultAsync(a => a.Id == pollId);
 
         var vote = poll.Votes.FirstOrDefault(a => a.UserCountryId == country.Id);
@@ -299,30 +301,17 @@ public class MainController : CommandControllerBase
                 PollId = poll.Id
             };
 
-            context.Votes.Add(vote);
+            if (poll.Votes == null)
+            {
+                poll.Votes = new List<Vote>();
+            }
+
+            poll.Votes.Add(vote);
         }
 
         vote.Reaction = reaction;
-
         await context.SaveChangesAsync();
-
-        var pollMessage = Update.CallbackQuery.Message;
-
-        var votes = await context.Votes.Include(a => a.Country).Where(a => a.PollId == pollId).ToListAsync();
-        var votesText = VotesToString(votes);
-
-        string text;
-        if (pollMessage.Text.Contains("Результати:"))
-        {
-            text = pollMessage.Text[..pollMessage.Text.IndexOf("\nРезультати:")] + $"\nРезультати:\n{votesText}";
-        }
-        else
-        {
-            text = pollMessage.Text + $"\nРезультати:\n{votesText}";
-        }
-
-        await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup);
-        await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ваш голос прийнято!");
+        await SendPoll(poll);
     }
 
     [Priority(EndpointPriority.First)]
@@ -379,8 +368,20 @@ public class MainController : CommandControllerBase
         }
 
         var keyboard = VoteMarkup(poll.Id);
-        var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
-        poll.MessageId = pollMessage.MessageId;
+        if (Update.Message != null)
+        {
+            var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard);
+            poll.MessageId = pollMessage.MessageId;
+        }
+
+        if (Update.CallbackQuery != null)
+        {
+            var pollMessage = Update.CallbackQuery.Message;
+
+            await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup);
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ваш голос прийнято!");
+        }
+
         await context.SaveChangesAsync();
     }
 
