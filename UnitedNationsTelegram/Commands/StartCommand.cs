@@ -139,7 +139,7 @@ public class MainController : CommandControllerBase
                 .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
                 .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
                 .OrderBy(a => a.Created)
-                .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive);
+                .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive && a.MessageId == 0);
 
             if (nextPoll == null)
             {
