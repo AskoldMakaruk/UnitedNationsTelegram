@@ -91,12 +91,12 @@ public class MainController : CommandControllerBase
             await context.SaveChangesAsync();
 
 
-            var activePoll = await context.Polls.Include(a => a.OpenedBy)
-                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.MessageId != 0)
+            var activePolls = await context.Polls.Include(a => a.OpenedBy)
+                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.MessageId == 0)
                 .CountAsync();
-            if (activePoll != 0)
+            if (activePolls != 0)
             {
-                var text = $"В цьому чаті вже є активне голосування.\nТвоє питання поставлено у чергу під номером <b>{activePoll}</b>:\n{poll.Text}";
+                var text = $"В цьому чаті вже є активне голосування.\nТвоє питання поставлено у чергу під номером <b>{activePolls}</b>:\n{poll.Text}";
 
                 await Client.SendTextMessage(text, parseMode: ParseMode.Html);
             }
@@ -137,7 +137,7 @@ public class MainController : CommandControllerBase
             var nextPoll = await context.Polls
                 .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
                 .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
-                .OrderByDescending(a => a.Created)
+                .OrderBy(a => a.Created)
                 .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive);
 
             if (nextPoll == null)
@@ -338,7 +338,7 @@ public class MainController : CommandControllerBase
         builder.AppendLine("Основні члени РадБезу:");
         foreach (var userCountry in users.OrderByDescending(a => a.Votes.Count))
         {
-            if (i == 4)
+            if (i == 5)
             {
                 builder.AppendLine($"\nУсі інші члени РадБезу:");
             }

@@ -12,7 +12,6 @@ public class UNContext : IdentityDbContext<UNUser>
 
     public UNContext(DbContextOptions builder) : base(builder)
     {
-        Database.Migrate();
     }
 
     public async Task<Poll?> GetActivePoll(long chatId)
