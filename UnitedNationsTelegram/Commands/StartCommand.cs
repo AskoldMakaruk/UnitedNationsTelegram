@@ -248,12 +248,19 @@ public class MainController : CommandControllerBase
         }
 
         var type = Update.Message?.Text?["/ping".Length..]?.Trim();
-        var answer = type switch
+        string answer;
+        if (type == "all")
+            answer = await All();
+        else if (type == "main")
+            answer = await M();
+        else if (await context.FindByCountryName(type, ChatId) is { } a)
         {
-            "all" => await All(),
-            "main" => await M(),
-            _ => $"параметри команди ping \n<b>all<\b> - викликати усіх членів РадБезу ООН\n<b>main<\b> - викликати головних членів РадБезу ООН"
-        };
+            answer = $"Увага {a.Country.EmojiFlag}{a.Country.Name} @{a.User.UserName}";
+        }
+        else
+        {
+            answer = $"параметри команди ping \n<b>all<\b> - викликати усіх членів РадБезу ООН\n<b>main<\b> - викликати головних членів РадБезу ООН";
+        }
 
         await Client.SendTextMessage(answer, parseMode: ParseMode.Html);
 

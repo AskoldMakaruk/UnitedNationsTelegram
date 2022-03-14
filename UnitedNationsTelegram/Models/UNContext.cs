@@ -14,6 +14,14 @@ public class UNContext : IdentityDbContext<UNUser>
     {
     }
 
+    public async Task<UserCountry?> FindByCountryName(string input, long chatId)
+    {
+        return await UserCountries
+            .Include(a => a.Country)
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => EF.Functions.ILike(a.Country.Name, input) && a.ChatId == chatId);
+    }
+
     public async Task<Poll?> GetNextPoll(long ChatId)
     {
         return await Polls
@@ -22,7 +30,7 @@ public class UNContext : IdentityDbContext<UNUser>
             .OrderBy(a => a.Created)
             .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive && a.MessageId == 0);
     }
-     
+
     public async Task<Poll?> GetActivePoll(long chatId)
     {
         return await Polls
