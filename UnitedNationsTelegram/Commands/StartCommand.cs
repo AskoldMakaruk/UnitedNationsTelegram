@@ -134,7 +134,9 @@ public class MainController : CommandControllerBase
             await Client.SendTextMessage($"Питання: {poll.Text}\n\nГолоси: \n{results}", replyToMessageId: poll.MessageId, parseMode: ParseMode.Html);
             await context.SaveChangesAsync();
 
-            var nextPoll = await context.Polls.Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+            var nextPoll = await context.Polls
+                .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+                .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
                 .OrderByDescending(a => a.Created)
                 .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive);
 
