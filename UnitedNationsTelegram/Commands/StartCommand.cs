@@ -131,7 +131,7 @@ public class MainController : CommandControllerBase
         {
             poll.IsActive = false;
             var results = VotesToString(poll.Votes);
-            await Client.SendTextMessage($"Питання: {poll.Text}\n\nГолоси: \n{results}", replyToMessageId: poll.MessageId);
+            await Client.SendTextMessage($"Питання: {poll.Text}\n\nГолоси: \n{results}", replyToMessageId: poll.MessageId, parseMode: ParseMode.Html);
             await context.SaveChangesAsync();
 
             var nextPoll = await context.Polls.Include(a => a.OpenedBy).ThenInclude(a => a.Country)
@@ -492,10 +492,43 @@ public class MainController : CommandControllerBase
 
     public static string VotesToString(List<Vote> votes)
     {
-        var votesText = string.Join("\n", votes.GroupBy(a => a.Reaction).Select(a =>
+        var builder = new StringBuilder();
+        builder.AppendJoin("\n", votes.GroupBy(a => a.Reaction).Select(a =>
             $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
         ));
-        return votesText;
+        builder.AppendLine("\n\nРезультат:");
+
+        var vetos = votes.Where(a => a.Reaction == Reaction.Veto).ToList();
+        var negative = votes.Where(a => a.Reaction is Reaction.Absent or Reaction.Against or Reaction.Condemn).ToList();
+        var positive = votes.Where(a => a.Reaction is Reaction.For or Reaction.Support).ToList();
+        var concern = votes.Where(a => a.Reaction is Reaction.Concern).ToList();
+
+        var count = votes.Count / 2;
+
+        if (vetos.Count != 0)
+        {
+            var plural = (votes.Count > 1 ? "и" : "а");
+            builder.AppendLine($"Країн{plural} наклал{plural} {Reactions.First(a => a.Reaction == Reaction.Veto).Text}");
+            builder.AppendLine(string.Concat(vetos.Select(a => a.Country.Country.EmojiFlag)));
+        }
+        else if (negative.Count > count)
+        {
+            builder.AppendLine("Рішення <b>не прийнято</b>");
+        }
+        else if (positive.Count > count)
+        {
+            builder.AppendLine("Рішення <b>прийнято</b>");
+        }
+        else if (concern.Count > count)
+        {
+            builder.AppendLine("Рішення <b>відправляємо занепокоєння</b>");
+        }
+        else
+        {
+            builder.AppendLine("<b>Не вдалося зрозуміти чого хоче РадБез</b>");
+        }
+
+        return builder.ToString();
     }
 }
 
