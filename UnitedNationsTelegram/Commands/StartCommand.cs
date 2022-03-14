@@ -1,3 +1,4 @@
+using System.Security;
 using System.Text;
 using BotFramework.Abstractions;
 using BotFramework.Extensions;
@@ -354,7 +355,7 @@ public class MainController : CommandControllerBase
         var votesText = VotesToString(poll.Votes);
 
         var text = $"{country.Country.EmojiFlag}{country.Country.Name} піднімає питання:\n" +
-                   $"{poll.Text}\n\n" +
+                   $"{SecurityElement.Escape(poll.Text)}\n\n" +
                    $"Голосуємо панове.";
 
         if (poll.Votes.Count != 0)
@@ -371,6 +372,7 @@ public class MainController : CommandControllerBase
         {
             text += $"Мінімальна кількість голосів: ({poll.Votes.Count} < 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
         }
+
 
         var keyboard = VoteMarkup(poll.Id);
         if (Update.Message != null)
@@ -499,7 +501,7 @@ public class MainController : CommandControllerBase
         {
             return "";
         }
-        
+
         var builder = new StringBuilder();
         builder.AppendJoin("\n", votes.OrderByDescending(a => a.Reaction).GroupBy(a => a.Reaction).Select(a =>
             $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
