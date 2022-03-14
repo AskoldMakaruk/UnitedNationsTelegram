@@ -501,7 +501,7 @@ public class MainController : CommandControllerBase
     public static string VotesToString(List<Vote> votes)
     {
         var builder = new StringBuilder();
-        builder.AppendJoin("\n", votes.GroupBy(a => a.Reaction).Select(a =>
+        builder.AppendJoin("\n", votes.OrderByDescending(a=>a.Reaction).GroupBy(a => a.Reaction).Select(a =>
             $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
         ));
         builder.AppendLine("\n\nРезультат:");
