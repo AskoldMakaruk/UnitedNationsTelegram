@@ -135,11 +135,7 @@ public class MainController : CommandControllerBase
             await Client.SendTextMessage($"Питання: {poll.Text}\n\nГолоси: \n{results}", replyToMessageId: poll.MessageId, parseMode: ParseMode.Html);
             await context.SaveChangesAsync();
 
-            var nextPoll = await context.Polls
-                .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
-                .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
-                .OrderBy(a => a.Created)
-                .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive && a.MessageId == 0);
+            var nextPoll = await context.GetNextPoll(ChatId);
 
             if (nextPoll == null)
             {
@@ -159,8 +155,7 @@ public class MainController : CommandControllerBase
     [StartsWith("/active")]
     public async Task ActivePoll()
     {
-        var chat = Update.GetInfoFromUpdate().Chat!.Id;
-        var poll = await context.GetActivePoll(chat);
+        var poll = await context.GetActivePoll(ChatId) ?? await context.GetNextPoll(ChatId);
 
         if (poll == null)
         {
@@ -501,7 +496,7 @@ public class MainController : CommandControllerBase
     public static string VotesToString(List<Vote> votes)
     {
         var builder = new StringBuilder();
-        builder.AppendJoin("\n", votes.OrderByDescending(a=>a.Reaction).GroupBy(a => a.Reaction).Select(a =>
+        builder.AppendJoin("\n", votes.OrderByDescending(a => a.Reaction).GroupBy(a => a.Reaction).Select(a =>
             $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
         ));
         builder.AppendLine("\n\nРезультат:");

@@ -14,6 +14,15 @@ public class UNContext : IdentityDbContext<UNUser>
     {
     }
 
+    public async Task<Poll?> GetNextPoll(long ChatId)
+    {
+        return await Polls
+            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
+            .OrderBy(a => a.Created)
+            .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive && a.MessageId == 0);
+    }
+     
     public async Task<Poll?> GetActivePoll(long chatId)
     {
         return await Polls
