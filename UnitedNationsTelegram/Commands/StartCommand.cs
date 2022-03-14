@@ -370,7 +370,7 @@ public class MainController : CommandControllerBase
 
         if (!canClose)
         {
-            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} \\< 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
+            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} &lt; 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
         }
 
 
