@@ -81,7 +81,10 @@ public class UNContext : IdentityDbContext<UNUser>
 
     public async Task<List<UserCountry>> MainMembers(long chat)
     {
-        return UserCountries.Include(a => a.Votes).Include(a => a.Country).Where(a => a.ChatId == chat).OrderByDescending(a => a.Votes.Count).Take(5).ToList();
+        return UserCountries.Include(a => a.Votes)
+            .Include(a => a.Country)
+            .Include(a => a.User)
+            .Where(a => a.ChatId == chat).OrderByDescending(a => a.Votes.Count).Take(5).ToList();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

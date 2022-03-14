@@ -63,13 +63,22 @@ public class MainController : CommandControllerBase
                 return;
             }
 
-            var chat = Update.GetInfoFromUpdate().Chat;
-            if (chat.Type == ChatType.Private)
+
+            if (Chat.Type == ChatType.Private)
             {
                 await Client.SendTextMessage("В цьому чаті неможливо розпочати голосування.");
                 return;
             }
 
+            var pollsFromUserCount = await context.Polls
+                .Include(a => a.OpenedBy).ThenInclude(a => a.User)
+                .CountAsync(a => a.OpenedBy.ChatId == ChatId && a.OpenedBy.User.Id == Update.GetUser().Id && a.IsActive);
+
+            if (pollsFromUserCount >= 2)
+            {
+                await Client.SendTextMessage("Ти вже додав нормальну кількість питань у чергу.");
+                return;
+            }
 
             var poll = new Poll()
             {
@@ -82,10 +91,12 @@ public class MainController : CommandControllerBase
             await context.SaveChangesAsync();
 
 
-            var activePoll = await context.Polls.Include(a => a.OpenedBy).Where(a => a.IsActive && a.OpenedBy.ChatId == chat.Id && a.MessageId != 0).CountAsync();
+            var activePoll = await context.Polls.Include(a => a.OpenedBy)
+                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.MessageId != 0)
+                .CountAsync();
             if (activePoll != 0)
             {
-                var text = $"В цьому чаті вже є активне голосування.\nТвоє питання поставлено у чергу під номером <b>{activePoll}</b>";
+                var text = $"В цьому чаті вже є активне голосування.\nТвоє питання поставлено у чергу під номером <b>{activePoll}</b>:\n{poll.Text}";
 
                 await Client.SendTextMessage(text, parseMode: ParseMode.Html);
             }
@@ -105,8 +116,7 @@ public class MainController : CommandControllerBase
     [StartsWith("/close")]
     public async Task ClosePoll()
     {
-        var chat = Update.GetInfoFromUpdate().Chat!.Id;
-        var poll = await context.GetActivePoll(chat);
+        var poll = await context.GetActivePoll(ChatId);
 
         if (poll == null)
         {
@@ -114,7 +124,7 @@ public class MainController : CommandControllerBase
             return;
         }
 
-        var mainMembers = await context.MainMembers(chat);
+        var mainMembers = await context.MainMembers(ChatId);
         var mainMemberNotVoted = mainMembers.Where(a => a.Votes.All(c => c.PollId != poll.Id)).ToList();
         var mainMembersVoted = mainMemberNotVoted.Count == 0;
         var enoughVotes = poll.Votes.Count >= 8;
@@ -128,7 +138,7 @@ public class MainController : CommandControllerBase
 
             var nextPoll = await context.Polls.Include(a => a.OpenedBy).ThenInclude(a => a.Country)
                 .OrderByDescending(a => a.Created)
-                .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chat && a.IsActive);
+                .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive);
 
             if (nextPoll == null)
             {
