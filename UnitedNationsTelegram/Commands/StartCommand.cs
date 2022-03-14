@@ -4,6 +4,7 @@ using BotFramework.Extensions;
 using BotFramework.Services.Commands;
 using BotFramework.Services.Commands.Attributes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -369,7 +370,12 @@ public class MainController : CommandControllerBase
         var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
         var canClose = poll.Votes.Count >= 8 || mainMemberNotVoted.Count == 0;
 
-        text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>";
+        text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>\n";
+
+        if (!canClose)
+        {
+            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} < 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
+        }
 
         var keyboard = VoteMarkup(poll.Id);
         if (Update.Message != null)
@@ -500,11 +506,16 @@ public class MainController : CommandControllerBase
         ));
         builder.AppendLine("\n\nРезультат:");
 
-        var vetos = votes.Where(a => a.Reaction == Reaction.Veto).ToList();
-        var negative = votes.Where(a => a.Reaction is Reaction.Absent or Reaction.Against or Reaction.Condemn).ToList();
-        var positive = votes.Where(a => a.Reaction is Reaction.For or Reaction.Support).ToList();
-        var concern = votes.Where(a => a.Reaction is Reaction.Concern).ToList();
+        var reactions = new List<(List<Reaction> reactions, string Text)>()
+        {
+            (new() { Reaction.Absent }, "<b>Ніхто не прийшов на вечірку</b>"),
+            (new() { Reaction.Against }, "Рішення <b>не прийнято</b>"),
+            (new() { Reaction.Concern }, "Рішення <b>відправляємо занепокоєння</b>"),
+            (new() { Reaction.Condemn }, "Рішення <b>відправляємо засудження</b>"),
+            (new() { Reaction.For, Reaction.Support }, "Рішення <b>прийнято</b>"),
+        };
 
+        var vetos = votes.Where(a => a.Reaction == Reaction.Veto).ToList();
         var count = votes.Count / 2;
 
         if (vetos.Count != 0)
@@ -513,21 +524,24 @@ public class MainController : CommandControllerBase
             builder.AppendLine($"Країн{plural} наклал{plural} {Reactions.First(a => a.Reaction == Reaction.Veto).Text}");
             builder.AppendLine(string.Concat(vetos.Select(a => a.Country.Country.EmojiFlag)));
         }
-        else if (negative.Count > count)
+        else if (reactions.Any(a => Check(a.reactions, a.Text)))
         {
-            builder.AppendLine("Рішення <b>не прийнято</b>");
-        }
-        else if (positive.Count > count)
-        {
-            builder.AppendLine("Рішення <b>прийнято</b>");
-        }
-        else if (concern.Count > count)
-        {
-            builder.AppendLine("Рішення <b>відправляємо занепокоєння</b>");
         }
         else
         {
             builder.AppendLine("<b>Не вдалося зрозуміти чого хоче РадБез</b>");
+        }
+
+        bool Check(List<Reaction> reaction, string result)
+        {
+            var votesCount = votes.Count(a => reaction.Contains(a.Reaction));
+            if (votesCount > count)
+            {
+                builder.AppendLine(result);
+                return true;
+            }
+
+            return false;
         }
 
         return builder.ToString();
