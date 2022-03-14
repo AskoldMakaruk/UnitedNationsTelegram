@@ -16,6 +16,9 @@ using Poll = UnitedNationsTelegram.Models.Poll;
 [Priority(EndpointPriority.First)]
 public class MainController : CommandControllerBase
 {
+    public const int MinMembersVotes = 15;
+    public const int MainMembersCount = 7;
+
     public static string BotUserName;
     private readonly ITelegramBotClient bot;
     private readonly UNUser user;
@@ -127,7 +130,7 @@ public class MainController : CommandControllerBase
         }
 
         var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
-        var canClose = poll.Votes.Count >= 8 || mainMemberNotVoted.Count == 0;
+        var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         if (canClose)
         {
@@ -148,7 +151,7 @@ public class MainController : CommandControllerBase
         else
         {
             var s = string.Join(",", mainMemberNotVoted.Select(a => $"{a.Country.EmojiFlag}{a.Country.Name} - @{a.User.UserName}"));
-            await Client.SendTextMessage($"Не виконані умови закриття:\nКількість голосів менша за необхідну ({poll.Votes.Count} < 8)\nНе всі основні країни проголосували ({s}) ", replyToMessageId: poll.MessageId);
+            await Client.SendTextMessage($"Не виконані умови закриття:\nКількість голосів менша за необхідну ({poll.Votes.Count} < {MinMembersVotes})\nНе всі основні країни проголосували ({s}) ", replyToMessageId: poll.MessageId);
         }
     }
 
@@ -342,7 +345,7 @@ public class MainController : CommandControllerBase
         builder.AppendLine("Основні члени РадБезу:");
         foreach (var userCountry in users.OrderByDescending(a => a.Votes.Count))
         {
-            if (i == 5)
+            if (i == MainMembersCount)
             {
                 builder.AppendLine($"\nУсі інші члени РадБезу:");
             }
@@ -371,13 +374,13 @@ public class MainController : CommandControllerBase
         }
 
         var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
-        var canClose = poll.Votes.Count >= 8 || mainMemberNotVoted.Count == 0;
+        var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>\n";
 
         if (!canClose)
         {
-            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} &lt; 8)\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
+            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} &lt; {MinMembersVotes})\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
         }
 
 

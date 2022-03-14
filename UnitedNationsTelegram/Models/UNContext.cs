@@ -19,7 +19,7 @@ public class UNContext : IdentityDbContext<UNUser>
         return await UserCountries
             .Include(a => a.Country)
             .Include(a => a.User)
-            .FirstOrDefaultAsync(a => EF.Functions.ILike(a.Country.Name, input) && a.ChatId == chatId);
+            .FirstOrDefaultAsync(a => EF.Functions.ILike(a.Country.Name, $"%{input}%") && a.ChatId == chatId);
     }
 
     public async Task<Poll?> GetNextPoll(long ChatId)
@@ -55,7 +55,7 @@ public class UNContext : IdentityDbContext<UNUser>
         return UserCountries.Include(a => a.Votes)
             .Include(a => a.Country)
             .Include(a => a.User)
-            .Where(a => a.ChatId == chat).OrderByDescending(a => a.Votes.Count).Take(5).ToList();
+            .Where(a => a.ChatId == chat).OrderByDescending(a => a.Votes.Count).Take(MainController.MainMembersCount).ToList();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
