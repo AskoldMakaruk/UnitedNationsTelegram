@@ -279,7 +279,7 @@ public class MainController : CommandControllerBase
 
         var poll = await context.Polls
             .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
-            .Include(a => a.Votes).ThenInclude(a => a.Country)
+            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
             .FirstOrDefaultAsync(a => a.Id == pollId);
 
         var vote = poll.Votes.FirstOrDefault(a => a.UserCountryId == country.Id);
