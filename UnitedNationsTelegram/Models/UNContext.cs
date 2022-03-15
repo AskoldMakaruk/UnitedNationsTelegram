@@ -35,8 +35,7 @@ public class UNContext : IdentityDbContext<UNUser>
     {
         return await Polls
             .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
-            .Include(a => a.Votes)
-            .ThenInclude(a => a.Country)
+            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
             .Where(a => a.OpenedBy.ChatId == ChatId)
             .OrderByDescending(a => a.Created)
             .Skip(skip)

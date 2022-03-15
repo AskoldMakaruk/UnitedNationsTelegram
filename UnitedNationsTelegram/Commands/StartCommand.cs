@@ -632,6 +632,11 @@ public class MainController : CommandControllerBase
 
     public static string GetPollResult(List<Vote> votes)
     {
+        if (votes.Count == 0)
+        {
+            return "";
+        }
+        
         var reactions = new List<(List<Reaction> reactions, string Text)>()
         {
             (new() { Reaction.Absent }, "<b>Ніхто не прийшов на вечірку</b>🥱"),
