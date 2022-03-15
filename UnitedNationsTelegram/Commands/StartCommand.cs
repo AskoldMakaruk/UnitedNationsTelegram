@@ -55,7 +55,6 @@ public class MainController : CommandControllerBase
             }
             catch (Exception e)
             {
-                
             }
         }
     }
@@ -389,12 +388,12 @@ public class MainController : CommandControllerBase
         {
             if (previous > current)
             {
-                return $"(-{current - previous}🔽)";
+                return $"(-{Math.Abs(current - previous)}↓)";
             }
 
             if (previous < current)
             {
-                return $"(+{current - previous}🔼)";
+                return $"(+{current - previous}↑)";
             }
 
             return "";
@@ -636,7 +635,7 @@ public class MainController : CommandControllerBase
         {
             return "";
         }
-        
+
         var reactions = new List<(List<Reaction> reactions, string Text)>()
         {
             (new() { Reaction.Absent }, "<b>Ніхто не прийшов на вечірку</b>🥱"),
@@ -652,7 +651,7 @@ public class MainController : CommandControllerBase
         if (vetos.Count != 0)
         {
             var plural = (votes.Count > 1 ? "и" : "а");
-            return $"Країн{plural} наклал{plural} {Reactions.First(a => a.Reaction == Reaction.Veto).Text}\n{string.Concat(vetos.Select(a => a.Country.Country.EmojiFlag))}\n";
+            return $"Країн{plural} наклал{plural} {Reactions.First(a => a.Reaction == Reaction.Veto).Text}\n{string.Concat(vetos.Select(a => a.Country.Country.EmojiFlag))}";
         }
 
         foreach (var (list, text) in reactions)
