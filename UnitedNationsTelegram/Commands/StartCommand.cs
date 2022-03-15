@@ -1,12 +1,9 @@
-using System.Security;
 using System.Text;
 using BotFramework.Abstractions;
 using BotFramework.Extensions;
 using BotFramework.Services.Commands;
 using BotFramework.Services.Commands.Attributes;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
-using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -40,6 +37,27 @@ public class MainController : CommandControllerBase
 
         Chat = update.Update.GetInfoFromUpdate().Chat;
         ChatId = Chat.Id;
+    }
+
+    [Admin]
+    [Priority(EndpointPriority.First)]
+    [StartsWith("/update")]
+    public async Task SendUpdate()
+    {
+        var message = Update.Message;
+        var chats = await context.UserCountries.Select(a => a.ChatId).Distinct().ToListAsync();
+
+        foreach (var chat in chats)
+        {
+            try
+            {
+                await Client.ForwardMessage(ChatId, message.MessageId, chatId: chat);
+            }
+            catch (Exception e)
+            {
+                
+            }
+        }
     }
 
     [Priority(EndpointPriority.First)]
