@@ -16,7 +16,7 @@ var hostBuilder = Host.CreateDefaultBuilder(args)
     .UseSerilog((context, configuration) =>
     {
         configuration
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
             .WriteTo.Console();
     })

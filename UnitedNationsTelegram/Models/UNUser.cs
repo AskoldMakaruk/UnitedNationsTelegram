@@ -34,6 +34,7 @@ public class Vote
     public int UserCountryId { get; set; }
     public int PollId { get; set; }
     public Reaction Reaction { get; set; }
+    public DateTime? Created { get; set; } = DateTime.Now;
 
     public virtual Poll Poll { get; set; }
     public virtual UserCountry Country { get; set; }

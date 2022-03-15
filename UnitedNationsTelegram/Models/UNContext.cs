@@ -31,6 +31,19 @@ public class UNContext : IdentityDbContext<UNUser>
             .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive && a.MessageId == 0);
     }
 
+    public async Task<List<Poll>> GetPolls(long ChatId, int skip, int take = 10)
+    {
+        return await Polls
+            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
+            .Include(a => a.Votes)
+            .ThenInclude(a => a.Country)
+            .Where(a => a.OpenedBy.ChatId == ChatId)
+            .OrderByDescending(a => a.Created)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
     public async Task<Poll?> GetActivePoll(long chatId)
     {
         return await Polls
