@@ -89,7 +89,7 @@ public class MainController : CommandControllerBase
             }
 
 
-            pollText = pollText.Replace($"@{BotUserName}", "", StringComparison.InvariantCultureIgnoreCase).Trim();
+            pollText = RemoveBotName(pollText)!;
 
             if (pollText.Length < 3)
             {
@@ -264,7 +264,7 @@ public class MainController : CommandControllerBase
             return;
         }
 
-        var type = Update.Message?.Text?["/ping".Length..]?.Trim();
+        var type = RemoveBotName(Update.Message?.Text?["/ping".Length..]);
         string answer;
         if (type == "all")
             answer = await All();
@@ -670,6 +670,11 @@ public class MainController : CommandControllerBase
             var votesCount = votes.Count(a => reaction.Contains(a.Reaction));
             return votesCount > count ? result : null;
         }
+    }
+
+    public static string? RemoveBotName(string? s)
+    {
+        return s?.Replace($"@{BotUserName}", "", StringComparison.InvariantCultureIgnoreCase)?.Trim();
     }
 }
 
