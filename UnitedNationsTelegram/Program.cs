@@ -7,6 +7,7 @@ using Serilog.Events;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using UnitedNationsTelegram;
+using UnitedNationsTelegram.Commands;
 using UnitedNationsTelegram.Models;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -34,7 +35,7 @@ var db = host.Services.GetService<UNContext>();
 db.Database.Migrate();
 
 var me = bot.GetMeAsync().GetAwaiter().GetResult();
-MainController.BotUserName = me.Username;
+Utils.BotUserName = me.Username;
 
 bot.SetMyCommandsAsync(new List<BotCommand>
 {
@@ -47,6 +48,11 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/vote",
         Description = "почати голосування"
+    },  
+    new()
+    {
+        Command = "/sanction",
+        Description = "створити санкцію"
     }, 
     new()
     {

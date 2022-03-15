@@ -18,6 +18,9 @@ public class UserCountry
 
     public List<Vote> Votes { get; set; }
     public List<Poll> OpenedPolls { get; set; }
+    public List<Sanction> Sanctions { get; set; }
+
+    public string ToFlagName() => $"{Country.EmojiFlag}{Country.Name}";
 }
 
 public class Country
@@ -40,6 +43,19 @@ public class Vote
     public virtual UserCountry Country { get; set; }
 }
 
+public class Sanction
+{
+    public int Id { get; set; }
+    public int PollId { get; set; }
+    public int AgainstId { get; set; }
+    public string SanctionType { get; set; }
+    public DateTime? ActiveUntil { get; set; }
+    public bool IsSupported { get; set; }
+
+    public UserCountry Against { get; set; }
+    public Poll Poll { get; set; }
+}
+
 public class Poll
 {
     public int Id { get; set; }
@@ -49,6 +65,19 @@ public class Poll
     public DateTime Created { get; set; } = DateTime.Now;
 
     public string Text { get; set; }
-    public List<Vote> Votes { get; set; }
+    public PollType Type { get; set; }
+    public List<Vote> Votes { get; set; } = new();
     public UserCountry OpenedBy { get; set; }
+
+    public Sanction Sanction { get; set; }
+}
+
+public enum PollType
+{
+    Normal = 1,
+    Sanction = 2,
+    FlagChange = 3,
+    NameChange = 4,
+    AddCountry = 5,
+    DeleteCountry = 6
 }

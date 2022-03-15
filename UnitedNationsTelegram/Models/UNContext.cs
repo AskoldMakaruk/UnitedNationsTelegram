@@ -1,10 +1,12 @@
 using BotFramework.Identity.EntityFramework;
 using Microsoft.EntityFrameworkCore;
+using UnitedNationsTelegram.Commands;
 
 namespace UnitedNationsTelegram.Models;
 
 public class UNContext : IdentityDbContext<UNUser>
 {
+    public DbSet<Sanction> Sanctions { get; set; }
     public DbSet<UserCountry> UserCountries { get; set; }
     public DbSet<Country> Countries { get; set; }
     public DbSet<Vote> Votes { get; set; }
@@ -14,45 +16,16 @@ public class UNContext : IdentityDbContext<UNUser>
     {
     }
 
-    public async Task<UserCountry?> FindByCountryName(string input, long chatId)
+    public async Task<UserCountry?> FindByCountry(string input, long chatId)
     {
         return await UserCountries
             .Include(a => a.Country)
             .Include(a => a.User)
-            .FirstOrDefaultAsync(a => EF.Functions.ILike(a.Country.Name, $"%{input}%") && a.ChatId == chatId);
+            .FirstOrDefaultAsync(a => EF.Functions.ILike(a.Country.Name, $"%{input}%")
+                                      || EF.Functions.ILike(a.Country.EmojiFlag, $"%{input}%")
+                                      && a.ChatId == chatId);
     }
 
-    public async Task<Poll?> GetNextPoll(long ChatId)
-    {
-        return await Polls
-            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
-            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
-            .OrderBy(a => a.Created)
-            .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == ChatId && a.IsActive && a.MessageId == 0);
-    }
-
-    public async Task<List<Poll>> GetPolls(long ChatId, int skip, int take = 10)
-    {
-        return await Polls
-            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
-            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
-            .Where(a => a.OpenedBy.ChatId == ChatId)
-            .OrderByDescending(a => a.Created)
-            .Skip(skip)
-            .Take(take)
-            .ToListAsync();
-    }
-
-    public async Task<Poll?> GetActivePoll(long chatId)
-    {
-        return await Polls
-            .Include(a => a.OpenedBy)
-            .ThenInclude(a => a.Country)
-            .Include(c => c.Votes)
-            .ThenInclude(c => c.Country)
-            .ThenInclude(c => c.Country)
-            .FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chatId && a.IsActive && a.MessageId != 0);
-    }
 
     public async Task<List<UserCountry>> MainMembersNotVoted(long chat, int pollId)
     {
@@ -60,7 +33,6 @@ public class UNContext : IdentityDbContext<UNUser>
         var mainMemberNotVoted = mainMembers.Where(a => a.Votes.All(c => c.PollId != pollId)).ToList();
         return mainMemberNotVoted;
     }
-
 
     public async Task<List<UserCountry>> MainMembers(long chat)
     {
@@ -72,12 +44,18 @@ public class UNContext : IdentityDbContext<UNUser>
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.Entity<Sanction>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.HasOne(a => a.Poll).WithOne(a => a.Sanction).HasForeignKey<Sanction>(a => a.PollId);
+            e.HasOne(a => a.Against).WithMany(a => a.Sanctions).HasForeignKey(a => a.AgainstId);
+        });
+
         builder.Entity<Vote>(e =>
         {
             e.HasKey(a => new { a.UserCountryId, a.PollId });
             e.HasOne(a => a.Country).WithMany(a => a.Votes).HasForeignKey(a => a.UserCountryId);
         });
-
 
         builder.Entity<Poll>(e =>
         {
