@@ -21,7 +21,7 @@ public class SanctionService
             .AnyAsync(a => a.SanctionType == type
                 && a.Against.ChatId == chatId
                 && a.Against.Id == userCountryId
-                && a.ActiveUntil == null || a.ActiveUntil > DateTime.Now
+                && (a.ActiveUntil == null || a.ActiveUntil > DateTime.Now)
                 && a.IsSupported
             );
     }

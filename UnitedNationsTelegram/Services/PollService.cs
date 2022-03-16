@@ -16,10 +16,14 @@ public class PollService
     {
         var ChatId = poll.OpenedBy.ChatId;
         var userId = poll.OpenedBy.User.Id;
+        poll.IsSigned = false;
+        poll.IsActive = false;
 
         var pollsFromUserCount = await context.Polls
             .Include(a => a.OpenedBy).ThenInclude(a => a.User)
-            .CountAsync(a => a.OpenedBy.ChatId == ChatId && a.OpenedBy.User.Id == userId && a.IsActive);
+            .CountAsync(a => a.OpenedBy.ChatId == ChatId
+                && a.OpenedBy.User.Id == userId
+                && a.IsActive);
 
         if (pollsFromUserCount >= 2)
         {
@@ -28,14 +32,6 @@ public class PollService
 
         context.Polls.Add(poll);
         await context.SaveChangesAsync();
-
-        var activePolls = await context.Polls.Include(a => a.OpenedBy)
-            .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.Id != poll.Id)
-            .CountAsync();
-        if (activePolls != 0)
-        {
-            return (null, $"В цьому чаті вже є активне голосування.\nТвоє питання поставлено у чергу під номером <b>{activePolls}</b>:\n{poll.Text}");
-        }
 
         return (poll, null);
     }
@@ -50,7 +46,7 @@ public class PollService
     public async Task<List<Poll>> GetPolls(long chatId, int skip, int take = 10)
     {
         return await Polls
-            .Where(a => a.OpenedBy.ChatId == chatId)
+            .Where(a => a.OpenedBy.ChatId == chatId && a.IsSigned)
             .OrderByDescending(a => a.Created)
             .Skip(skip)
             .Take(take)
@@ -62,8 +58,14 @@ public class PollService
         return await Polls.FirstOrDefaultAsync(a => a.OpenedBy.ChatId == chatId && a.IsActive && a.MessageId != 0);
     }
 
+    public async Task<Poll?> GetPoll(int pollId)
+    {
+        return await Polls.FirstOrDefaultAsync(a => a.Id == pollId);
+    }
+
     private IQueryable<Poll> Polls => context.Polls
         .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
         .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
-        .Include(a => a.Sanction).ThenInclude(a => a.Against).ThenInclude(a => a.Country);
+        .Include(a => a.Sanction).ThenInclude(a => a.Against).ThenInclude(a => a.Country)
+        .Include(a => a.Signatures).ThenInclude(a => a.UserCountry).ThenInclude(a => a.Country);
 }

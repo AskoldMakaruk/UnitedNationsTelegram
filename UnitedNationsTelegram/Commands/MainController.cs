@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using UnitedNationsTelegram.Models;
 using UnitedNationsTelegram.Services;
+using UnitedNationsTelegram.Utils;
 using Poll = UnitedNationsTelegram.Models.Poll;
 using PollType = UnitedNationsTelegram.Models.PollType;
 
@@ -65,7 +66,6 @@ public class MainController : UnController
                 return;
             }
 
-
             var poll = new Poll
             {
                 Text = pollText,
@@ -73,6 +73,7 @@ public class MainController : UnController
                 IsActive = true,
                 OpenedBy = country,
             };
+
 
             await AddPoll(poll);
         }
@@ -265,10 +266,7 @@ public class MainController : UnController
             return;
         }
 
-        var poll = await context.Polls
-            .Include(a => a.OpenedBy).ThenInclude(a => a.Country)
-            .Include(a => a.Votes).ThenInclude(a => a.Country).ThenInclude(a => a.Country)
-            .FirstOrDefaultAsync(a => a.Id == pollId);
+        var poll = await pollService.GetPoll(pollId);
 
         if (poll is not { IsActive: true })
         {
@@ -302,6 +300,52 @@ public class MainController : UnController
         vote.Reaction = reaction;
         await context.SaveChangesAsync();
         await SendPoll(poll);
+    }
+
+    [Priority(EndpointPriority.First)]
+    [CallbackData("sign")]
+    public async Task Sign()
+    {
+        var data = Update.CallbackQuery!.Data!.Split("_");
+        var pollId = int.Parse(data[1]);
+
+        var country = await CheckUserCountry();
+        if (country == null)
+        {
+            return;
+        }
+
+        var poll = await pollService.GetPoll(pollId);
+        if (poll.OpenedById == country.Id)
+        {
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Та ти не можеш підписати своє питання.");
+            return;
+        }
+
+        if (await sanctionService.CheckUserSanction("vote", ChatId, country.Id))
+        {
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "На тебе накладено санкції, друже. Ти не можеш підписувати питання.");
+            return;
+        }
+
+        var signature = poll.Signatures.FirstOrDefault(a => a.UserCountryId == country.Id);
+        if (signature != null)
+        {
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ти вже підписав це.");
+        }
+        else
+        {
+            signature = new Signature()
+            {
+                PollId = pollId,
+                UserCountry = country
+            };
+
+            poll.Signatures.Add(signature);
+        }
+
+        await context.SaveChangesAsync();
+        await SendPollPetition(poll);
     }
 
     [Priority(EndpointPriority.First)]
@@ -339,7 +383,7 @@ public class MainController : UnController
             var previousDayIndex = userYsOrder.IndexOf(userCountry);
             var votesChange = userCountry.Votes.Count - yesterdayVotes.FirstOrDefault(a => a.Id == userCountry.Id).Votes.Count;
             var votesChangeText = votesChange == 0 ? "" : $"(+{votesChange})";
-            builder.AppendLine($"{i + 1}{GetChange(i, previousDayIndex)}. {userCountry.Country.EmojiFlag}{userCountry.Country.Name} представник: <b>{userCountry.User.UserName} - {userCountry.Votes.Count} {votesChangeText}</b>");
+            builder.AppendLine($"{i + 1}{GetChange(i, previousDayIndex)}. {userCountry.Country.EmojiFlag}{userCountry.Country.Name}: <b>{userCountry.User.UserName} - {userCountry.Votes.Count} {votesChangeText}</b>");
 
             i++;
         }

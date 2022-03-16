@@ -1,12 +1,12 @@
 using BotFramework.Abstractions;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Utils;
 
 public class AdminAttribute : CommandAttribute
 {
     public override bool? Suitable(UpdateContext context)
     {
         var userId = context.Update.GetUser()?.Id;
-        return userId == 249258727 || userId == 249122421;
+        return userId is 249258727 or 249122421;
     }
 }

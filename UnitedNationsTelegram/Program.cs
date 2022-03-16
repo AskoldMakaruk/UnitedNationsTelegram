@@ -9,6 +9,7 @@ using Telegram.Bot.Types;
 using UnitedNationsTelegram;
 using UnitedNationsTelegram.Commands;
 using UnitedNationsTelegram.Models;
+using UnitedNationsTelegram.Utils;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 

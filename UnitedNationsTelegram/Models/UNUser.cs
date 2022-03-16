@@ -62,14 +62,27 @@ public class Poll
     public int OpenedById { get; set; }
     public int MessageId { get; set; }
     public bool IsActive { get; set; }
+    public bool IsSigned { get; set; }
     public DateTime Created { get; set; } = DateTime.Now;
 
     public string Text { get; set; }
     public PollType Type { get; set; }
-    public List<Vote> Votes { get; set; } = new();
-    public UserCountry OpenedBy { get; set; }
 
+    public UserCountry OpenedBy { get; set; }
     public Sanction Sanction { get; set; }
+    public List<Vote> Votes { get; set; } = new();
+    public List<Signature> Signatures { get; set; } = new List<Signature>();
+}
+
+public class Signature
+{
+    public int Id { get; set; }
+    public int UserCountryId { get; set; }
+    public int PollId { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
+
+    public Poll Poll { get; set; }
+    public UserCountry UserCountry { get; set; }
 }
 
 public enum PollType

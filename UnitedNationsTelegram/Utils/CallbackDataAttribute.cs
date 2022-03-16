@@ -1,6 +1,6 @@
 using BotFramework.Abstractions;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Utils;
 
 public class CallbackDataAttribute : CommandAttribute
 {

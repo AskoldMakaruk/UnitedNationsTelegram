@@ -26,6 +26,10 @@ public class UNContext : IdentityDbContext<UNUser>
                                       && a.ChatId == chatId);
     }
 
+    public async Task<int> MembersCount(long chatId)
+    {
+        return await UserCountries.CountAsync(a => a.ChatId == chatId);
+    }
 
     public async Task<List<UserCountry>> MainMembersNotVoted(long chat, int pollId)
     {

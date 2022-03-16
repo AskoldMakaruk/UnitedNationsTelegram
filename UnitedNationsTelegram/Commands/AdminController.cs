@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using UnitedNationsTelegram.Models;
 using UnitedNationsTelegram.Services;
+using UnitedNationsTelegram.Utils;
 
 namespace UnitedNationsTelegram.Commands;
 

@@ -1,4 +1,4 @@
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Utils;
 
 public static class Utils
 {

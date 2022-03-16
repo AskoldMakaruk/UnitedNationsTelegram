@@ -19,6 +19,7 @@ public abstract class UnController : CommandControllerBase
 {
     public const int MinMembersVotes = 15;
     public const int MainMembersCount = 7;
+    public const int SignatureRequirement = 5;
 
     protected readonly ITelegramBotClient bot;
     protected readonly UNUser user;
@@ -47,7 +48,7 @@ public abstract class UnController : CommandControllerBase
         ChatId = Chat.Id;
     }
 
-    public async Task SendPoll(Poll poll)
+    public async Task SendPoll(Poll poll, bool forceSend = false)
     {
         var country = poll.OpenedBy;
         var votesText = VotesToString(poll.Votes);
@@ -72,13 +73,20 @@ public abstract class UnController : CommandControllerBase
         }
 
         var keyboard = VoteMarkup();
-        if (Update.Message != null)
+        if (forceSend || Update.Message != null)
         {
-            var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard, parseMode: ParseMode.Html);
-            poll.MessageId = pollMessage.MessageId;
+            if (poll.MessageId == 0)
+            {
+                var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard, parseMode: ParseMode.Html);
+                poll.MessageId = pollMessage.MessageId;
+            }
+            else
+            {
+                await Client.SendTextMessage("Ось тут ☝️", replyToMessageId: poll.MessageId);
+            }
         }
 
-        if (Update.CallbackQuery != null)
+        if (!forceSend && Update.CallbackQuery != null)
         {
             var pollMessage = Update.CallbackQuery.Message;
 
@@ -333,10 +341,82 @@ public abstract class UnController : CommandControllerBase
         }
         else
         {
-            await SendPoll(res.pollToSend!);
+            await SendPollPetition(res.pollToSend!);
         }
     }
 
+    public async Task SendPollPetition(Poll poll)
+    {
+        var str = new StringBuilder();
+        str.AppendLine($"{poll.OpenedBy.ToFlagName()} збирає підписи щоб підняти питання:");
+        str.AppendLine(poll.Text);
+        str.AppendLine();
+        if (poll.Signatures.Count > 0)
+        {
+            str.AppendLine($"Підписали: {string.Concat(poll.Signatures.Select(a => a.UserCountry.Country.EmojiFlag))}");
+        }
+
+        var count = await context.MembersCount(ChatId);
+        count = Math.Min(count - 1, SignatureRequirement);
+        if (poll.Signatures.Count < count)
+        {
+            str.AppendLine($"Залишилось підписів: {count - poll.Signatures.Count}");
+        }
+
+
+        var text = str.ToString();
+        if (Update.Message != null)
+        {
+            await Client.SendTextMessage(text, parseMode: ParseMode.Html, replyMarkup: PetitionMarkup(poll, count));
+        }
+
+        var collectedSignatures = count <= poll.Signatures.Count;
+
+        if (collectedSignatures)
+        {
+            poll.IsActive = true;
+            poll.IsSigned = true;
+        }
+
+        if (Update.CallbackQuery != null)
+        {
+            var pollMessage = Update.CallbackQuery.Message;
+
+            if (pollMessage.Text != text.Trim().ReplaceLineEndings("\n") || collectedSignatures)
+            {
+                await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: PetitionMarkup(poll, count), parseMode: ParseMode.Html);
+            }
+
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ваш підпис прийнято!");
+        }
+
+        if (poll.Signatures.Count >= count)
+        {
+            var activePolls = await context.Polls.Include(a => a.OpenedBy)
+                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.Id != poll.Id)
+                .CountAsync();
+            if (activePolls != 0)
+            {
+                await Client.SendTextMessage($"Після збору підписів у чергу під номером <b>{activePolls}</b> було додане питання від <b>{poll.OpenedBy.ToFlagName()}</b>:\n{poll.Text}",
+                    parseMode: ParseMode.Html
+                );
+                await context.SaveChangesAsync();
+                return;
+            }
+
+            await SendPoll(poll, true);
+        }
+    }
+
+    public static InlineKeyboardMarkup? PetitionMarkup(Poll poll, int count)
+    {
+        if (poll.Signatures.Count >= count)
+        {
+            return null;
+        }
+
+        return new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Підписати✍️", $"sign_{poll.Id}"));
+    }
 
     public string GetSanctionPollCloseText(Poll poll)
     {
