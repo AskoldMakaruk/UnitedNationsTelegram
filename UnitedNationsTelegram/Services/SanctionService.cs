@@ -20,7 +20,7 @@ public class SanctionService
         return await _context.Sanctions
             .AnyAsync(a => a.SanctionType == type
                 && a.Against.ChatId == chatId
-                && a.Against.Id == userCountryId
+                && a.Against.UserCountryId == userCountryId
                 && (a.ActiveUntil == null || a.ActiveUntil > DateTime.Now)
                 && a.IsSupported
             );

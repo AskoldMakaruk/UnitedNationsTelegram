@@ -37,7 +37,7 @@ namespace UnitedNationsTelegram.Migrations
                 table: "Polls",
                 column: "OpenedById",
                 principalTable: "UserCountries",
-                principalColumn: "Id",
+                principalColumn: "UserCountryId",
                 onDelete: ReferentialAction.Cascade);
         }
 

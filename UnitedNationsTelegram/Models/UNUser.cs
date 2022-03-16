@@ -9,7 +9,7 @@ public class UNUser : IdentityUser
 
 public class UserCountry
 {
-    public int Id { get; set; }
+    public int UserCountryId { get; set; }
     public long ChatId { get; set; }
     public int CountryId { get; set; }
     public Country Country { get; set; }
@@ -25,7 +25,7 @@ public class UserCountry
 
 public class Country
 {
-    public int Id { get; set; }
+    public int CountryId { get; set; }
     public string EmojiFlag { get; set; }
     public string Name { get; set; }
 
@@ -45,7 +45,7 @@ public class Vote
 
 public class Sanction
 {
-    public int Id { get; set; }
+    public int SanctionId { get; set; }
     public int PollId { get; set; }
     public int AgainstId { get; set; }
     public string SanctionType { get; set; }
@@ -58,7 +58,7 @@ public class Sanction
 
 public class Poll
 {
-    public int Id { get; set; }
+    public int PollId { get; set; }
     public int OpenedById { get; set; }
     public int MessageId { get; set; }
     public bool IsActive { get; set; }
@@ -76,7 +76,7 @@ public class Poll
 
 public class Signature
 {
-    public int Id { get; set; }
+    public int SignatureId { get; set; }
     public int UserCountryId { get; set; }
     public int PollId { get; set; }
     public DateTime Created { get; set; } = DateTime.Now;

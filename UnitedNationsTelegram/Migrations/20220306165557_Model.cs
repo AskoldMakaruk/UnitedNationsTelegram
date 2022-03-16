@@ -61,13 +61,13 @@ namespace UnitedNationsTelegram.Migrations
                         name: "FK_Vote_Country_CountryId",
                         column: x => x.CountryId,
                         principalTable: "Country",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Vote_Poll_PollId",
                         column: x => x.PollId,
                         principalTable: "Poll",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -86,7 +86,7 @@ namespace UnitedNationsTelegram.Migrations
                 table: "BF_Users",
                 column: "CountryId",
                 principalTable: "Country",
-                principalColumn: "Id");
+                principalColumn: "UserCountryId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

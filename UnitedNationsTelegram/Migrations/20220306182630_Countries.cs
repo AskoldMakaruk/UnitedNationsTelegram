@@ -57,26 +57,26 @@ namespace UnitedNationsTelegram.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Polls",
                 table: "Polls",
-                column: "Id");
+                column: "UserCountryId");
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Countries",
                 table: "Countries",
-                column: "Id");
+                column: "UserCountryId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_BF_Users_Countries_CountryId",
                 table: "BF_Users",
                 column: "CountryId",
                 principalTable: "Countries",
-                principalColumn: "Id");
+                principalColumn: "UserCountryId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Votes_Countries_CountryId",
                 table: "Votes",
                 column: "CountryId",
                 principalTable: "Countries",
-                principalColumn: "Id",
+                principalColumn: "UserCountryId",
                 onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
@@ -84,7 +84,7 @@ namespace UnitedNationsTelegram.Migrations
                 table: "Votes",
                 column: "PollId",
                 principalTable: "Polls",
-                principalColumn: "Id",
+                principalColumn: "UserCountryId",
                 onDelete: ReferentialAction.Cascade);
         }
 
@@ -139,26 +139,26 @@ namespace UnitedNationsTelegram.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Poll",
                 table: "Poll",
-                column: "Id");
+                column: "UserCountryId");
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Country",
                 table: "Country",
-                column: "Id");
+                column: "UserCountryId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_BF_Users_Country_CountryId",
                 table: "BF_Users",
                 column: "CountryId",
                 principalTable: "Country",
-                principalColumn: "Id");
+                principalColumn: "UserCountryId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Vote_Country_CountryId",
                 table: "Vote",
                 column: "CountryId",
                 principalTable: "Country",
-                principalColumn: "Id",
+                principalColumn: "UserCountryId",
                 onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
@@ -166,7 +166,7 @@ namespace UnitedNationsTelegram.Migrations
                 table: "Vote",
                 column: "PollId",
                 principalTable: "Poll",
-                principalColumn: "Id",
+                principalColumn: "UserCountryId",
                 onDelete: ReferentialAction.Cascade);
         }
     }

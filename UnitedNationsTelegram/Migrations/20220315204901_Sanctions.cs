@@ -36,13 +36,13 @@ namespace UnitedNationsTelegram.Migrations
                         name: "FK_Sanctions_Polls_PollId",
                         column: x => x.PollId,
                         principalTable: "Polls",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Sanctions_UserCountries_AgainstId",
                         column: x => x.AgainstId,
                         principalTable: "UserCountries",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                 });
 

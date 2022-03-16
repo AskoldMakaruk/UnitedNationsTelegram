@@ -60,7 +60,7 @@ namespace UnitedNationsTelegram.Migrations
                         name: "FK_BF_UserClaims_BF_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "BF_Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -81,7 +81,7 @@ namespace UnitedNationsTelegram.Migrations
                         name: "FK_BFRoleClaims_BFRoles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "BFRoles",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -99,13 +99,13 @@ namespace UnitedNationsTelegram.Migrations
                         name: "FK_BFUserRoles_BF_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "BF_Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_BFUserRoles_BFRoles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "BFRoles",
-                        principalColumn: "Id",
+                        principalColumn: "UserCountryId",
                         onDelete: ReferentialAction.Cascade);
                 });
 

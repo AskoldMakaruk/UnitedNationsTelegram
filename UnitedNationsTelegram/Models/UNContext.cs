@@ -50,7 +50,7 @@ public class UNContext : IdentityDbContext<UNUser>
     {
         builder.Entity<Sanction>(e =>
         {
-            e.HasKey(a => a.Id);
+            e.HasKey(a => a.SanctionId);
             e.HasOne(a => a.Poll).WithOne(a => a.Sanction).HasForeignKey<Sanction>(a => a.PollId);
             e.HasOne(a => a.Against).WithMany(a => a.Sanctions).HasForeignKey(a => a.AgainstId);
         });
@@ -75,7 +75,7 @@ public class UNContext : IdentityDbContext<UNUser>
 
         builder.Entity<UserCountry>(e =>
         {
-            e.HasKey(a => a.Id);
+            e.HasKey(a => a.UserCountryId);
             e.HasIndex(a => new { a.CountryId, a.ChatId, a.UserId }).IsUnique();
             e.HasOne(a => a.User).WithMany(a => a.Countries).HasForeignKey(a => a.UserId);
             e.HasOne(a => a.Country).WithMany(a => a.Users).HasForeignKey(a => a.CountryId);

@@ -62,7 +62,7 @@ public abstract class UnController : CommandControllerBase
             text += $"\nГолоси:\n{votesText}";
         }
 
-        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
+        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.PollId);
         var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>\n";
@@ -102,7 +102,7 @@ public abstract class UnController : CommandControllerBase
                 .Where(a => poll.Type != PollType.Sanction || a.Reaction != Reaction.Veto)
                 .Select(a => new InlineKeyboardButton(a.Text)
                 {
-                    CallbackData = $"vote_{a.Reaction}_{poll.Id}",
+                    CallbackData = $"vote_{a.Reaction}_{poll.PollId}",
                 })
                 .Chunk(3);
 
@@ -393,7 +393,7 @@ public abstract class UnController : CommandControllerBase
         if (poll.Signatures.Count >= count)
         {
             var activePolls = await context.Polls.Include(a => a.OpenedBy)
-                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.Id != poll.Id)
+                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.PollId != poll.PollId)
                 .CountAsync();
             if (activePolls != 0)
             {
@@ -415,7 +415,7 @@ public abstract class UnController : CommandControllerBase
             return null;
         }
 
-        return new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Підписати✍️", $"sign_{poll.Id}"));
+        return new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Підписати✍️", $"sign_{poll.PollId}"));
     }
 
     public string GetSanctionPollCloseText(Poll poll)

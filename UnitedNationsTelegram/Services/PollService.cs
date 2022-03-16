@@ -60,7 +60,7 @@ public class PollService
 
     public async Task<Poll?> GetPoll(int pollId)
     {
-        return await Polls.FirstOrDefaultAsync(a => a.Id == pollId);
+        return await Polls.FirstOrDefaultAsync(a => a.PollId == pollId);
     }
 
     private IQueryable<Poll> Polls => context.Polls

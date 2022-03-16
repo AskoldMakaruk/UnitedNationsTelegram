@@ -59,7 +59,7 @@ public class MainController : UnController
                 return;
             }
 
-            if (await sanctionService.CheckUserSanction("vote", ChatId, country.Id))
+            if (await sanctionService.CheckUserSanction("vote", ChatId, country.UserCountryId))
             {
                 await Client.SendTextMessage("На тебе накладено санкції, друже. Ти не можеш накладати створювати нові питання.",
                     replyToMessageId: Update.Message.MessageId);
@@ -96,7 +96,7 @@ public class MainController : UnController
             return;
         }
 
-        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.Id);
+        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.PollId);
         var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         if (canClose)
@@ -172,13 +172,6 @@ public class MainController : UnController
         await Client.EditMessageText(Update.CallbackQuery.Message.MessageId, text, parseMode: ParseMode.Html, replyMarkup: markup);
     }
 
-    [Priority(EndpointPriority.Last)]
-    [StartsWith("/roll")]
-    public async Task Roll()
-    {
-        await Client.SendTextMessage($"<b>{Random.Shared.Next(0, 100)}</b>", parseMode: ParseMode.Html, replyToMessageId: Update.Message.MessageId);
-    }
-
     [Priority(EndpointPriority.First)]
     [StartsWith("/roll_country")]
     public async Task RollCountry()
@@ -211,7 +204,7 @@ public class MainController : UnController
             return;
         }
 
-        if (await sanctionService.CheckUserSanction("vote", ChatId, country.Id))
+        if (await sanctionService.CheckUserSanction("vote", ChatId, country.UserCountryId))
         {
             await Client.SendTextMessage("На тебе накладено санкції, друже. Ти не можеш пігнувати нікого.",
                 replyToMessageId: Update.Message.MessageId);
@@ -274,19 +267,19 @@ public class MainController : UnController
             return;
         }
 
-        if (reaction == Reaction.Veto && await sanctionService.CheckUserSanction("veto", ChatId, country.Id))
+        if (reaction == Reaction.Veto && await sanctionService.CheckUserSanction("veto", ChatId, country.UserCountryId))
         {
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "На тебе накладено санкції, друже. Ти не можеш накладати вето.");
             return;
         }
 
-        var vote = poll.Votes.FirstOrDefault(a => a.UserCountryId == country.Id);
+        var vote = poll.Votes.FirstOrDefault(a => a.UserCountryId == country.UserCountryId);
         if (vote == null)
         {
             vote = new Vote()
             {
-                UserCountryId = country.Id,
-                PollId = poll.Id
+                UserCountryId = country.UserCountryId,
+                PollId = poll.PollId
             };
 
             if (poll.Votes == null)
@@ -316,19 +309,19 @@ public class MainController : UnController
         }
 
         var poll = await pollService.GetPoll(pollId);
-        if (poll.OpenedById == country.Id)
+        if (poll.OpenedById == country.UserCountryId)
         {
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Та ти не можеш підписати своє питання.");
             return;
         }
 
-        if (await sanctionService.CheckUserSanction("vote", ChatId, country.Id))
+        if (await sanctionService.CheckUserSanction("vote", ChatId, country.UserCountryId))
         {
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "На тебе накладено санкції, друже. Ти не можеш підписувати питання.");
             return;
         }
 
-        var signature = poll.Signatures.FirstOrDefault(a => a.UserCountryId == country.Id);
+        var signature = poll.Signatures.FirstOrDefault(a => a.UserCountryId == country.UserCountryId);
         if (signature != null)
         {
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ти вже підписав це.");
@@ -353,7 +346,7 @@ public class MainController : UnController
     public async Task Members()
     {
         // var admins = await bot.GetChatAdministratorsAsync(ChatId);
-        // var members = admins.Select(a => CheckUserCountry(ChatId, a.User.Id)).ToList();
+        // var members = admins.Select(a => CheckUserCountry(ChatId, a.User.UserCountryId)).ToList();
         // await Task.WhenAll(members);
 
         var builder = new StringBuilder();
@@ -363,13 +356,13 @@ public class MainController : UnController
             .Include(a => a.User)
             .Where(a => a.ChatId == ChatId).ToListAsync();
 
-        var polls = users.SelectMany(a => a.Votes.Select(a => a.Poll)).DistinctBy(a => a.Id).ToList();
-        var countries = users.Select(a => a.Country).DistinctBy(a => a.Id).ToList();
+        var polls = users.SelectMany(a => a.Votes.Select(a => a.Poll)).DistinctBy(a => a.PollId).ToList();
+        var countries = users.Select(a => a.Country).DistinctBy(a => a.CountryId).ToList();
 
         builder.Append($"В чаті <b>{Chat.Title}</b> проведено <b>{polls.Count}</b> голосовань у яких було подано <b>{polls.SelectMany(a => a.Votes).Count()}</b> голосів <b>{countries.Count}</b> країнами\n\n");
 
-        var yesterdayVotes = users.Select(a => (a.Id, Votes: a.Votes.Where(a => a.Created <= (DateTime.Now - TimeSpan.FromDays(1)).Date).ToList())).ToList();
-        var userYsOrder = users.OrderByDescending(a => yesterdayVotes.FirstOrDefault(x => x.Id == a.Id).Votes.Count).ToList();
+        var yesterdayVotes = users.Select(a => (Id: a.UserCountryId, Votes: a.Votes.Where(a => a.Created <= (DateTime.Now - TimeSpan.FromDays(1)).Date).ToList())).ToList();
+        var userYsOrder = users.OrderByDescending(a => yesterdayVotes.FirstOrDefault(x => x.Id == a.UserCountryId).Votes.Count).ToList();
 
         var i = 0;
         builder.AppendLine("Основні члени РадБезу:");
@@ -381,7 +374,7 @@ public class MainController : UnController
             }
 
             var previousDayIndex = userYsOrder.IndexOf(userCountry);
-            var votesChange = userCountry.Votes.Count - yesterdayVotes.FirstOrDefault(a => a.Id == userCountry.Id).Votes.Count;
+            var votesChange = userCountry.Votes.Count - yesterdayVotes.FirstOrDefault(a => a.Id == userCountry.UserCountryId).Votes.Count;
             var votesChangeText = votesChange == 0 ? "" : $"(+{votesChange})";
             builder.AppendLine($"{i + 1}{GetChange(i, previousDayIndex)}. {userCountry.Country.EmojiFlag}{userCountry.Country.Name}: <b>{userCountry.User.UserName} - {userCountry.Votes.Count} {votesChangeText}</b>");
 

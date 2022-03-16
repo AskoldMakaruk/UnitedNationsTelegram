@@ -7,7 +7,6 @@ using Serilog.Events;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using UnitedNationsTelegram;
-using UnitedNationsTelegram.Commands;
 using UnitedNationsTelegram.Models;
 using UnitedNationsTelegram.Utils;
 
@@ -79,11 +78,6 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/ping",
         Description = "викликати членів РадБезу"
-    },
-    new ()
-    {
-        Command = "/roll",
-        Description = "випадкове число 1-100"
     },
     new ()
     {

@@ -26,11 +26,11 @@ namespace UnitedNationsTelegram.Migrations
 
             modelBuilder.Entity("BotFramework.Identity.IdentityRole", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<long>("UserCountryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("UserCountryId"));
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -44,7 +44,7 @@ namespace UnitedNationsTelegram.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserCountryId");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
@@ -55,11 +55,11 @@ namespace UnitedNationsTelegram.Migrations
 
             modelBuilder.Entity("BotFramework.Identity.IdentityRoleClaim", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserCountryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserCountryId"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("text");
@@ -70,7 +70,7 @@ namespace UnitedNationsTelegram.Migrations
                     b.Property<long>("RoleId")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserCountryId");
 
                     b.HasIndex("RoleId");
 
@@ -79,11 +79,11 @@ namespace UnitedNationsTelegram.Migrations
 
             modelBuilder.Entity("BotFramework.Identity.IdentityUserClaim", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserCountryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserCountryId"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("text");
@@ -94,7 +94,7 @@ namespace UnitedNationsTelegram.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserCountryId");
 
                     b.HasIndex("UserId");
 
@@ -118,11 +118,11 @@ namespace UnitedNationsTelegram.Migrations
 
             modelBuilder.Entity("UnitedNationsTelegram.Models.Country", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserCountryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserCountryId"));
 
                     b.Property<string>("EmojiFlag")
                         .IsRequired()
@@ -132,7 +132,7 @@ namespace UnitedNationsTelegram.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserCountryId");
 
                     b.HasIndex("EmojiFlag")
                         .IsUnique();
@@ -145,28 +145,28 @@ namespace UnitedNationsTelegram.Migrations
 
             modelBuilder.Entity("UnitedNationsTelegram.Models.Poll", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserCountryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserCountryId"));
 
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserCountryId");
 
                     b.ToTable("Polls");
                 });
 
             modelBuilder.Entity("UnitedNationsTelegram.Models.UNUser", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<long>("UserCountryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("UserCountryId"));
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -188,7 +188,7 @@ namespace UnitedNationsTelegram.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserCountryId");
 
                     b.HasIndex("CountryId");
 
