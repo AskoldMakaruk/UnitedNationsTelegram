@@ -197,7 +197,7 @@ public class UtlisController : UnController
         var votes = await context.Votes.Where(a => a.UserCountryId == country.UserCountryId).ToListAsync();
         var polls = await pollService.GetUserPolls(country.UserCountryId);
         var date = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
-        var userPlace = await context.UserCountries.CountAsync(a => a.Votes.Count(c => c.Created.Value > date) > votes.Count(c => c.Created.Value > DateTime.Now.StartOfWeek(DayOfWeek.Monday)) && a.UserCountryId != country.UserCountryId && a.ChatId == country.ChatId);
+        var userPlace = await context.UserCountries.CountAsync(a => a.Votes.Count(c => c.Created > date) > votes.Count(c => c.Created > date) && a.UserCountryId != country.UserCountryId && a.ChatId == country.ChatId);
         var voteGroups = votes.GroupBy(a => a.Reaction).Select(a => $"{Reactions[a.Key]} - {a.Count()} <b>({(double)a.Count() / votes.Count:P})</b>");
         var mostCommonReactions = polls.SelectMany(a => a.Votes).GroupBy(a => a.Reaction).OrderByDescending(a => a.Count()).Take(3);
         var totalReactions = polls.Sum(a => a.Votes.Count);
