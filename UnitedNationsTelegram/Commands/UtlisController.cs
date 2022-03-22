@@ -137,7 +137,7 @@ public class UtlisController : UnController
 
         var i = 0;
         builder.AppendLine("Основні члени РадБезу:");
-        foreach (var userCountry in users.OrderByDescending(a => a.Votes.Count))
+        foreach (var userCountry in users.OrderByDescending(a => a.Votes.Count(a => a.Created.Value > DateTime.Now.StartOfWeek(DayOfWeek.Monday))))
         {
             if (i == MainMembersCount)
             {
@@ -230,5 +230,14 @@ public class UtlisController : UnController
 
     public UtlisController(IClient client, UpdateContext update, ITelegramBotClient bot, UNUser user, UNContext context, SanctionService sanctionService, PollService pollService) : base(client, update, bot, user, context, sanctionService, pollService)
     {
+    }
+}
+
+public static class DateTimeExtensions
+{
+    public static DateTime StartOfWeek(this DateTime dt, DayOfWeek startOfWeek)
+    {
+        int diff = (7 + (dt.DayOfWeek - startOfWeek)) % 7;
+        return dt.AddDays(-1 * diff).Date;
     }
 }
