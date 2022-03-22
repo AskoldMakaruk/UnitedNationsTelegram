@@ -145,9 +145,10 @@ public class UtlisController : UnController
             }
 
             var previousDayIndex = userYsOrder.IndexOf(userCountry);
-            var votesChange = userCountry.Votes.Count - yesterdayVotes.FirstOrDefault(a => a.Id == userCountry.UserCountryId).Votes.Count;
+            var userCountryVotes = userCountry.Votes.Where(a => a.Created.Value > DateTime.Now.StartOfWeek(DayOfWeek.Monday)).ToList();
+            var votesChange = userCountryVotes.Count - yesterdayVotes.FirstOrDefault(a => a.Id == userCountry.UserCountryId).Votes.Count;
             var votesChangeText = votesChange == 0 ? "" : $"(+{votesChange})";
-            builder.AppendLine($"{i + 1}{GetChange(i, previousDayIndex)}. {userCountry.Country.EmojiFlag}{userCountry.Country.Name}: <b>{userCountry.User.UserName} - {userCountry.Votes.Count} {votesChangeText}</b>");
+            builder.AppendLine($"{i + 1}{GetChange(i, previousDayIndex)}. {userCountry.Country.EmojiFlag}{userCountry.Country.Name}: <b>{userCountry.User.UserName} - {userCountryVotes.Count} {votesChangeText}</b>");
 
             i++;
         }
