@@ -92,5 +92,6 @@ public enum PollType
     FlagChange = 3,
     NameChange = 4,
     AddCountry = 5,
-    DeleteCountry = 6
+    DeleteCountry = 6,
+    HonorablePromotion = 7
 }

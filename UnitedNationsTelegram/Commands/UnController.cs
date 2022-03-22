@@ -3,7 +3,6 @@ using BotFramework.Abstractions;
 using BotFramework.Extensions;
 using BotFramework.Services.Commands;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -432,14 +431,16 @@ public abstract class UnController : CommandControllerBase
         return $"<b>Заборонити {against.ToFlagName()} {GetSanctionActionText(type)}.</b>";
     }
 
-    public string GetSanctionActionText(string type) =>
-        type switch
+    public string GetSanctionActionText(string type)
+    {
+        return type switch
         {
             "veto" => $"накладати вето",
             "vote" => $"піднімати питання",
             "ping" => $"пінгувати людей",
             _ => null!
         };
+    }
 
 
     public static readonly IReadOnlyCollection<string> SanctionTypes = new[]

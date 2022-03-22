@@ -14,48 +14,24 @@ namespace UnitedNationsTelegram.Migrations
                 table: "Signature");
 
             migrationBuilder.RenameColumn(
-                name: "UserCountryId",
+                name: "Id",
+                table: "UserCountries",
+                newName: "UserCountryId");
+            
+            migrationBuilder.RenameColumn(
+                name: "Id",
                 table: "Sanctions",
                 newName: "SanctionId");
 
             migrationBuilder.RenameColumn(
-                name: "UserCountryId",
+                name: "Id",
                 table: "Polls",
                 newName: "PollId");
 
             migrationBuilder.RenameColumn(
-                name: "UserCountryId",
+                name: "Id",
                 table: "Countries",
                 newName: "CountryId");
-
-            migrationBuilder.RenameColumn(
-                name: "UserCountryId",
-                table: "BFRoles",
-                newName: "Id");
-
-            migrationBuilder.RenameColumn(
-                name: "UserCountryId",
-                table: "BFRoleClaims",
-                newName: "Id");
-
-            migrationBuilder.RenameColumn(
-                name: "UserCountryId",
-                table: "BF_Users",
-                newName: "Id");
-
-            migrationBuilder.RenameColumn(
-                name: "UserCountryId",
-                table: "BF_UserClaims",
-                newName: "Id");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "UserCountryId",
-                table: "Signature",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer")
-                .OldAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             migrationBuilder.AddColumn<int>(
                 name: "SignatureId",

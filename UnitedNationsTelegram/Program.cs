@@ -48,12 +48,12 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     {
         Command = "/vote",
         Description = "почати голосування"
-    },  
+    },
     new()
     {
         Command = "/sanction",
         Description = "створити санкцію"
-    }, 
+    },
     new()
     {
         Command = "/active",
@@ -71,6 +71,11 @@ bot.SetMyCommandsAsync(new List<BotCommand>
     },
     new()
     {
+        Command = "/stats",
+        Description = "статистика"
+    },
+    new()
+    {
         Command = "/polls",
         Description = "останні 10 питань"
     },
@@ -79,12 +84,12 @@ bot.SetMyCommandsAsync(new List<BotCommand>
         Command = "/ping",
         Description = "викликати членів РадБезу"
     },
-    new ()
+    new()
     {
         Command = "/roll_country",
         Description = "випадкова незанята країна"
     },
-    new ()
+    new()
     {
         Command = "/roll_member",
         Description = "випадковий член РадБезу"

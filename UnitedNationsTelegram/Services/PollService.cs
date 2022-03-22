@@ -22,8 +22,8 @@ public class PollService
         var pollsFromUserCount = await context.Polls
             .Include(a => a.OpenedBy).ThenInclude(a => a.User)
             .CountAsync(a => a.OpenedBy.ChatId == ChatId
-                && a.OpenedBy.User.Id == userId
-                && a.IsActive);
+                             && a.OpenedBy.User.Id == userId
+                             && a.IsActive);
 
         if (pollsFromUserCount >= 2)
         {
@@ -61,6 +61,11 @@ public class PollService
     public async Task<Poll?> GetPoll(int pollId)
     {
         return await Polls.FirstOrDefaultAsync(a => a.PollId == pollId);
+    }
+
+    public async Task<List<Poll>> GetUserPolls(int userId)
+    {
+        return await Polls.Where(a => a.OpenedById == userId).ToListAsync();
     }
 
     private IQueryable<Poll> Polls => context.Polls

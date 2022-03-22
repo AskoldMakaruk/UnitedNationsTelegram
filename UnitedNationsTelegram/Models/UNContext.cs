@@ -16,7 +16,7 @@ public class UNContext : IdentityDbContext<UNUser>
     {
     }
 
-    public async Task<UserCountry?> FindByCountry(string input, long chatId)
+    public async Task<UserCountry?> FindCountry(string input, long chatId)
     {
         return await UserCountries
             .Include(a => a.Country)

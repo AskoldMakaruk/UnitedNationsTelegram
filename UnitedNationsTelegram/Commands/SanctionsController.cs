@@ -51,7 +51,7 @@ public class SanctionsController : UnController
         }
 
         var findInput = words[2];
-        var sanctionCountry = await context.FindByCountry(findInput, ChatId);
+        var sanctionCountry = await context.FindCountry(findInput, ChatId);
         if (sanctionCountry == null)
         {
             await Client.SendTextMessage($"Не вдалося знайти країну {findInput}");
