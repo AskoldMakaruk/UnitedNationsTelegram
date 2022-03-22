@@ -205,7 +205,7 @@ public class UtlisController : UnController
         var friends = polls.SelectMany(a => a.Votes).GroupBy(a => a.Country).Where(a => a.Key != country)
             .OrderByDescending(a => a.Count(c => c.Reaction is Reaction.For or Reaction.Support)).Take(3).ToList();
         var foes = polls.SelectMany(a => a.Votes).GroupBy(a => a.Country).Where(a => a.Key != country)
-            .OrderByDescending(a => a.Count(c => c.Reaction is Reaction.Condemn or Reaction.Veto)).Take(3).ToList();
+            .OrderByDescending(a => a.Count(c => c.Reaction is Reaction.Condemn or Reaction.Veto or Reaction.Against)).Take(3).ToList();
 
         var builder = new StringBuilder();
         builder.AppendLine($"<b>{userPlace + 1}. {country.ToFlagName()}</b> на чолі з {country.User.UserName}");
@@ -217,7 +217,7 @@ public class UtlisController : UnController
         builder.AppendJoin("\n", friends.Select(c => $"{c.Key.ToFlagName()} - <b>{c.Count(c => c.Reaction is Reaction.For or Reaction.Support)}</b>"));
         builder.AppendLine("\n");
         builder.AppendLine($"Найзапекліші вороги:");
-        builder.AppendJoin("\n", foes.Select(c => $"{c.Key.ToFlagName()} - <b>{c.Count(c => c.Reaction is Reaction.Condemn or Reaction.Veto)}</b>"));
+        builder.AppendJoin("\n", foes.Select(c => $"{c.Key.ToFlagName()} - <b>{c.Count(c => c.Reaction is Reaction.Condemn or Reaction.Veto or Reaction.Against)}</b>"));
         builder.AppendLine("\n");
         builder.AppendLine("<b>Результати питань:</b>");
         builder.AppendJoin("\n", pollGroups.Select(a => $"{(a.Key == null ? "<b>Не вдалося зрозуміти чого хоче РадБез</b>😵‍💫" : Reactions[a.Key.Value])} - {a.Count()} <b>({(double)a.Count() / totalPolls.Count:P})</b>"));
