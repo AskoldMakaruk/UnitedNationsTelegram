@@ -98,10 +98,10 @@ public abstract class UnController : CommandControllerBase
         InlineKeyboardMarkup VoteMarkup()
         {
             var buttons = Reactions
-                .Where(a => poll.Type != PollType.Sanction || a.Reaction != Reaction.Veto)
-                .Select(a => new InlineKeyboardButton(a.Text)
+                .Where(a => poll.Type != PollType.Sanction || a.Key != Reaction.Veto)
+                .Select(a => new InlineKeyboardButton(a.Value)
                 {
-                    CallbackData = $"vote_{a.Reaction}_{poll.PollId}",
+                    CallbackData = $"vote_{a.Key}_{poll.PollId}",
                 })
                 .Chunk(3);
 
@@ -186,26 +186,26 @@ public abstract class UnController : CommandControllerBase
         return null;
     }
 
-    public static readonly IReadOnlyCollection<(Reaction Reaction, string Text)> Reactions = new[]
+    public static readonly IReadOnlyDictionary<Reaction, string> Reactions = new Dictionary<Reaction, string>()
     {
-        (Reaction.For, "За 👍"),
-        (Reaction.Against, "Проти 👎"),
-        (Reaction.Support, "Підтримати 👏"),
-        (Reaction.Condemn, "Засудити 😡"),
-        (Reaction.Absent, "Не прийти 🤔"),
-        (Reaction.Concern, "Стурбованість 😢"),
-        (Reaction.Veto, "Вето 🤮"),
+        [Reaction.For] = "За 👍",
+        [Reaction.Against] = "Проти 👎",
+        [Reaction.Support] = "Підтримати 👏",
+        [Reaction.Condemn] = "Засудити 😡",
+        [Reaction.Absent] = "Не прийти 🤔",
+        [Reaction.Concern] = "Стурбованість 😢",
+        [Reaction.Veto] = "Вето 🤮",
     };
 
-    public static readonly IReadOnlyList<(Reaction Reaction, string Text)> ResultReactions = new List<(Reaction, string)>()
+    public static readonly IReadOnlyDictionary<Reaction, string> ResultReactions = new Dictionary<Reaction, string>()
     {
-        (Reaction.For, "За 👍"),
-        (Reaction.Against, "Проти 👎"),
-        (Reaction.Support, "Підтримали 👏"),
-        (Reaction.Condemn, "Засудили 😡"),
-        (Reaction.Absent, "Не прийшли 🤔"),
-        (Reaction.Concern, "Стурбовані 😢"),
-        (Reaction.Veto, "Наклали вето 🤮"),
+        [Reaction.For] = "За 👍",
+        [Reaction.Against] = "Проти 👎",
+        [Reaction.Support] = "Підтримали 👏",
+        [Reaction.Condemn] = "Засудили 😡",
+        [Reaction.Absent] = "Не прийшли 🤔",
+        [Reaction.Concern] = "Стурбовані 😢",
+        [Reaction.Veto] = "Наклали вето 🤮",
     };
 
     public static string PollsToString(List<Poll> polls, int skipCount = 0)
@@ -279,13 +279,50 @@ public abstract class UnController : CommandControllerBase
 
         var builder = new StringBuilder();
         var reactionLines = votes.OrderByDescending(a => a.Reaction).ThenBy(a => a.UserCountryId).GroupBy(a => a.Reaction).Select(a =>
-            $"{ResultReactions.FirstOrDefault(x => x.Reaction == a.Key).Text} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
+            $"{ResultReactions[a.Key]} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
         ).ToList();
         builder.AppendJoin("\n", reactionLines);
         builder.AppendLine("\n\nРезультат:");
         builder.AppendLine(GetPollResult(votes));
 
         return builder.ToString();
+    }
+
+    public static Reaction? GetPollResultReaction(List<Vote> votes)
+    {
+        var reactions = new List<List<Reaction>>()
+        {
+            new() { Reaction.Absent },
+            new() { Reaction.Against },
+            new() { Reaction.Concern },
+            new() { Reaction.Condemn },
+            new() { Reaction.For, Reaction.Support },
+        };
+
+        var vetos = votes.Where(a => a.Reaction == Reaction.Veto).ToList();
+        var count = votes.Count / 2;
+
+        if (vetos.Count != 0)
+        {
+            return Reaction.Veto;
+        }
+
+        foreach (var list in reactions)
+        {
+            if (Check(list) is { } res)
+            {
+                return res;
+            }
+        }
+
+        return null;
+
+
+        Reaction? Check(List<Reaction> reaction)
+        {
+            var votesCount = votes.Count(a => reaction.Contains(a.Reaction));
+            return votesCount > count ? reaction[0] : null;
+        }
     }
 
     public static string GetPollResult(List<Vote> votes)
@@ -310,7 +347,7 @@ public abstract class UnController : CommandControllerBase
         if (vetos.Count != 0)
         {
             var plural = (votes.Count > 1 ? "и" : "а");
-            return $"Країн{plural} наклал{plural} {Reactions.First(a => a.Reaction == Reaction.Veto).Text}\n{string.Concat(vetos.Select(a => a.Country.Country.EmojiFlag))}";
+            return $"Країн{plural} наклал{plural} {Reactions[Reaction.Veto]}\n{string.Concat(vetos.Select(a => a.Country.Country.EmojiFlag))}";
         }
 
         foreach (var (list, text) in reactions)

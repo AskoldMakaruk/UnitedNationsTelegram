@@ -196,17 +196,31 @@ public class UtlisController : UnController
         var votes = await context.Votes.Where(a => a.UserCountryId == country.UserCountryId).ToListAsync();
         var polls = await pollService.GetUserPolls(country.UserCountryId);
         var userPlace = await context.UserCountries.CountAsync(a => a.Votes.Count > votes.Count && a.UserCountryId != country.UserCountryId && a.ChatId == country.ChatId);
-        var voteGroups = votes.GroupBy(a => a.Reaction).Select(a => $"{Reactions.First(x => x.Reaction == a.Key).Text} - {a.Count()}");
-        var mostCommonReaction = polls.SelectMany(a => a.Votes).GroupBy(a => a.Reaction).MaxBy(a => a.Count());
-        var pollGroups = polls.Where(a => !a.IsActive && a.IsSigned && a.Votes.Count != 0).GroupBy(a => GetPollResult(a.Votes));
+        var voteGroups = votes.GroupBy(a => a.Reaction).Select(a => $"{Reactions[a.Key]} - {a.Count()} <b>({(double)a.Count() / votes.Count:P})</b>");
+        var mostCommonReactions = polls.SelectMany(a => a.Votes).GroupBy(a => a.Reaction).OrderByDescending(a => a.Count()).Take(3);
+        var totalReactions = polls.Sum(a => a.Votes.Count);
+        var totalPolls = polls.Where(a => !a.IsActive && a.IsSigned && a.Votes.Count != 0).ToList();
+        var pollGroups = totalPolls.GroupBy(a => GetPollResultReaction(a.Votes));
+
+        var friends = polls.SelectMany(a => a.Votes).GroupBy(a => a.Country).Where(a => a.Key != country)
+            .OrderByDescending(a => a.Count(c => c.Reaction is Reaction.For or Reaction.Support)).Take(3).ToList();
+        var foes = polls.SelectMany(a => a.Votes).GroupBy(a => a.Country).Where(a => a.Key != country)
+            .OrderByDescending(a => a.Count(c => c.Reaction is Reaction.Condemn or Reaction.Veto)).Take(3).ToList();
 
         var builder = new StringBuilder();
         builder.AppendLine($"<b>{userPlace + 1}. {country.ToFlagName()}</b> на чолі з {country.User.UserName}");
         builder.AppendLine($"Усього питань піднятих країною: <b>{polls.Count}</b>");
-        builder.AppendLine($"Найпоширеніша рекація інших країн на питання: <b>{ResultReactions.First(a => a.Reaction == mostCommonReaction.Key).Text} - {mostCommonReaction.Count()}</b>");
-        builder.AppendLine();
+        builder.AppendLine($"Найпоширеніші рекації інших країн на питання:");
+        builder.AppendJoin("\n", mostCommonReactions.Select(c => $" <b>{ResultReactions[c.Key]} - {c.Count()} ({(double)c.Count() / totalReactions:P})</b>"));
+        builder.AppendLine("\n");
+        builder.AppendLine($"Найбільші друзі:");
+        builder.AppendJoin("\n", friends.Select(c => $"{c.Key.ToFlagName()} - <b>{c.Count(c => c.Reaction is Reaction.For or Reaction.Support)}</b>"));
+        builder.AppendLine("\n");
+        builder.AppendLine($"Найзапекліші вороги:");
+        builder.AppendJoin("\n", foes.Select(c => $"{c.Key.ToFlagName()} - <b>{c.Count(c => c.Reaction is Reaction.Condemn or Reaction.Veto)}</b>"));
+        builder.AppendLine("\n");
         builder.AppendLine("<b>Результати питань:</b>");
-        builder.AppendJoin("\n", pollGroups.Select(a => $"{a.Key} - {a.Count()}"));
+        builder.AppendJoin("\n", pollGroups.Select(a => $"{(a.Key == null ? "<b>Не вдалося зрозуміти чого хоче РадБез</b>😵‍💫" : Reactions[a.Key.Value])} - {a.Count()} <b>({(double)a.Count() / totalPolls.Count:P})</b>"));
         builder.AppendLine("\n");
         builder.AppendLine($"Усі голоси <b>{votes.Count}</b>:");
         builder.AppendJoin("\n", voteGroups);
