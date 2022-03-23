@@ -47,8 +47,9 @@ public abstract class UnController : CommandControllerBase
         ChatId = Chat.Id;
     }
 
-    public async Task SendPoll(Poll poll, bool forceSend = false)
+    public async Task SendPoll(Poll poll, bool forceSend = false, long? chatId = null)
     {
+        var ch = chatId ?? poll.OpenedBy.ChatId;
         var country = poll.OpenedBy;
         var votesText = VotesToString(poll.Votes);
 
@@ -61,7 +62,7 @@ public abstract class UnController : CommandControllerBase
             text += $"\nГолоси:\n{votesText}";
         }
 
-        var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.PollId);
+        var mainMemberNotVoted = await context.MainMembersNotVoted(ch, poll.PollId);
         var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>\n";
@@ -74,14 +75,33 @@ public abstract class UnController : CommandControllerBase
         var keyboard = VoteMarkup();
         if (forceSend || Update.Message != null)
         {
-            if (poll.MessageId == 0)
+            if (poll.MessageId == 0 || forceSend)
             {
-                var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard, parseMode: ParseMode.Html);
-                poll.MessageId = pollMessage.MessageId;
+                var pollMessage = await Client.SendTextMessage(text, replyMarkup: keyboard, parseMode: ParseMode.Html, chatId: ch);
+                if (Chat.Type != ChatType.Private)
+                {
+                    poll.MessageId = pollMessage.MessageId;
+                }
             }
             else
             {
                 await Client.SendTextMessage("Ось тут ☝️", replyToMessageId: poll.MessageId);
+            }
+
+            if (forceSend)
+            {
+                var chatMembers = await context.UserCountries.Include(a => a.User).Where(a => a.ChatId == ch && a.UserId != user.Id).ToListAsync();
+                foreach (var c in chatMembers)
+                {
+                    try
+                    {
+                        await Client.SendTextMessage(text, c.User.Id, replyMarkup: keyboard, parseMode: ParseMode.Html);
+                    }
+                    catch
+                    {
+                        //ignore
+                    }
+                }
             }
         }
 
@@ -90,6 +110,11 @@ public abstract class UnController : CommandControllerBase
             var pollMessage = Update.CallbackQuery.Message;
 
             await Client.EditMessageText(pollMessage.MessageId, text, replyMarkup: pollMessage.ReplyMarkup, parseMode: ParseMode.Html);
+            if (pollMessage.MessageId != poll.MessageId)
+            {
+                await Client.EditMessageText(poll.MessageId, text, ch, replyMarkup: pollMessage.ReplyMarkup, parseMode: ParseMode.Html);
+            }
+
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Ваш голос прийнято!");
         }
 
@@ -113,6 +138,21 @@ public abstract class UnController : CommandControllerBase
     {
         var info = Update.GetInfoFromUpdate();
         return await CheckUserCountry(info.Chat.Id, info.From.Id);
+    }
+
+    public async Task<UserCountry?> CheckUserCountryWithChatId(long chatId)
+    {
+        UserCountry? country = null;
+        if (ChatId != user.Id)
+        {
+            country = await CheckUserCountry();
+        }
+        else
+        {
+            country ??= await context.UserCountries.Include(a => a.Country).Include(a => a.User).FirstOrDefaultAsync(a => a.ChatId == chatId && a.UserId == user.Id);
+        }
+
+        return country;
     }
 
     public async Task<UserCountry?> CheckUserCountry(long chatId, long userId)
@@ -278,7 +318,7 @@ public abstract class UnController : CommandControllerBase
         }
 
         var builder = new StringBuilder();
-        var reactionLines = votes.OrderByDescending(a => a.Reaction).ThenBy(a => a.UserCountryId).GroupBy(a => a.Reaction).Select(a =>
+        var reactionLines = votes.OrderByDescending(a => a.Reaction).ThenByDescending(a => a.Created).GroupBy(a => a.Reaction).Select(a =>
             $"{ResultReactions[a.Key]} {string.Concat(a.Select(c => c.Country.Country.EmojiFlag))}"
         ).ToList();
         builder.AppendJoin("\n", reactionLines);
@@ -383,6 +423,7 @@ public abstract class UnController : CommandControllerBase
 
     public async Task SendPollPetition(Poll poll)
     {
+        var chatId = poll.OpenedBy.ChatId;
         var str = new StringBuilder();
         str.AppendLine($"{poll.OpenedBy.ToFlagName()} збирає підписи щоб підняти питання:");
         str.AppendLine(poll.Text);
@@ -392,7 +433,7 @@ public abstract class UnController : CommandControllerBase
             str.AppendLine($"Підписали: {string.Concat(poll.Signatures.Select(a => a.UserCountry.Country.EmojiFlag))}");
         }
 
-        var count = await context.MembersCount(ChatId);
+        var count = await context.MembersCount(chatId);
         count = Math.Min(count - 1, SignatureRequirement);
         if (poll.Signatures.Count < count)
         {
@@ -404,6 +445,18 @@ public abstract class UnController : CommandControllerBase
         if (Update.Message != null)
         {
             await Client.SendTextMessage(text, parseMode: ParseMode.Html, replyMarkup: PetitionMarkup(poll, count));
+            var chatMembers = await context.UserCountries.Include(a => a.User).Where(a => a.ChatId == chatId && a.UserId != user.Id).ToListAsync();
+            foreach (var c in chatMembers)
+            {
+                try
+                {
+                    await Client.SendTextMessage(text, c.User.Id, replyMarkup: PetitionMarkup(poll, count), parseMode: ParseMode.Html);
+                }
+                catch
+                {
+                    //ignore
+                }
+            }
         }
 
         var collectedSignatures = count <= poll.Signatures.Count;
@@ -429,12 +482,13 @@ public abstract class UnController : CommandControllerBase
         if (poll.Signatures.Count >= count)
         {
             var activePolls = await context.Polls.Include(a => a.OpenedBy)
-                .Where(a => a.IsActive && a.OpenedBy.ChatId == ChatId && a.PollId != poll.PollId)
+                .Where(a => a.IsActive && a.OpenedBy.ChatId == chatId && a.PollId != poll.PollId)
                 .CountAsync();
             if (activePolls != 0)
             {
                 await Client.SendTextMessage($"Після збору підписів у чергу під номером <b>{activePolls}</b> було додане питання від <b>{poll.OpenedBy.ToFlagName()}</b>:\n{poll.Text}",
-                    parseMode: ParseMode.Html
+                    parseMode: ParseMode.Html,
+                    chatId: chatId
                 );
                 await context.SaveChangesAsync();
                 return;

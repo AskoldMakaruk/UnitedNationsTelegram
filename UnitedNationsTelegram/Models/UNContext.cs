@@ -43,7 +43,7 @@ public class UNContext : IdentityDbContext<UNUser>
         return UserCountries.Include(a => a.Votes)
             .Include(a => a.Country)
             .Include(a => a.User)
-            .Where(a => a.ChatId == chat).OrderByDescending(a => a.Votes.Count).Take(MainController.MainMembersCount).ToList();
+            .Where(a => a.ChatId == chat).AsEnumerable().OrderByDescending(a => a.Votes.Count(a => a.Created > DateTime.Now.StartOfWeek(DayOfWeek.Monday))).Take(MainController.MainMembersCount).ToList();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

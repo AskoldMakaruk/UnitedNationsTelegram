@@ -120,7 +120,7 @@ public class MainController : UnController
                 return;
             }
 
-            await SendPoll(nextPoll);
+            await SendPoll(nextPoll, true);
         }
         else
         {
@@ -152,13 +152,14 @@ public class MainController : UnController
         var reaction = Enum.Parse<Reaction>(data[1]);
         var pollId = int.Parse(data[2]);
 
-        var country = await CheckUserCountry();
+        var poll = await pollService.GetPoll(pollId);
+        var country = await CheckUserCountryWithChatId(poll.OpenedBy.ChatId);
+
         if (country == null)
         {
             return;
         }
 
-        var poll = await pollService.GetPoll(pollId);
 
         if (poll is not { IsActive: true })
         {
@@ -200,14 +201,15 @@ public class MainController : UnController
     {
         var data = Update.CallbackQuery!.Data!.Split("_");
         var pollId = int.Parse(data[1]);
+        var poll = await pollService.GetPoll(pollId);
 
-        var country = await CheckUserCountry();
+        var country = await CheckUserCountryWithChatId(poll.OpenedBy.ChatId);
+
         if (country == null)
         {
             return;
         }
 
-        var poll = await pollService.GetPoll(pollId);
         if (poll.OpenedById == country.UserCountryId)
         {
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Та ти не можеш підписати своє питання.");

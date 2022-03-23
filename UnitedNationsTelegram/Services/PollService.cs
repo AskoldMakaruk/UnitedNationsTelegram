@@ -19,16 +19,16 @@ public class PollService
         poll.IsSigned = false;
         poll.IsActive = false;
 
-        var pollsFromUserCount = await context.Polls
-            .Include(a => a.OpenedBy).ThenInclude(a => a.User)
-            .CountAsync(a => a.OpenedBy.ChatId == ChatId
-                             && a.OpenedBy.User.Id == userId
-                             && a.IsActive);
-
-        if (pollsFromUserCount >= 2)
-        {
-            return (null, "Ти вже додав нормальну кількість питань у чергу.");
-        }
+        // var pollsFromUserCount = await context.Polls
+        //     .Include(a => a.OpenedBy).ThenInclude(a => a.User)
+        //     .CountAsync(a => a.OpenedBy.ChatId == ChatId
+        //                      && a.OpenedBy.User.Id == userId
+        //                      && a.IsActive);
+        //
+        // if (pollsFromUserCount >= 2)
+        // {
+        //     return (null, "Ти вже додав нормальну кількість питань у чергу.");
+        // }
 
         context.Polls.Add(poll);
         await context.SaveChangesAsync();
