@@ -54,7 +54,7 @@ public abstract class UnController : CommandControllerBase
         var votesText = VotesToString(poll.Votes);
         var count = await context.Polls.CountAsync(a => a.OpenedBy.ChatId == poll.OpenedBy.ChatId && !a.IsActive && a.IsSigned);
 
-        var text = $"{country.Country.EmojiFlag}{country.Country.Name} піднімає питання під номером <b>{count}</b>:\n" +
+        var text = $"{country.Country.EmojiFlag}{country.Country.Name} піднімає питання під номером <b>{count + 1}</b>:\n" +
                    $"{poll.Text}\n\n" +
                    $"Голосуємо панове.";
 
