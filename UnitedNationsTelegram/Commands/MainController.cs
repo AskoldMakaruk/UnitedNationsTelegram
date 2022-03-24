@@ -3,6 +3,7 @@ using BotFramework.Extensions;
 using BotFramework.Services.Commands.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using UnitedNationsTelegram.Models;
 using UnitedNationsTelegram.Services;
 using UnitedNationsTelegram.Utils;
@@ -213,6 +214,13 @@ public class MainController : UnController
         if (poll.OpenedById == country.UserCountryId)
         {
             await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Та ти не можеш підписати своє питання.");
+            return;
+        }
+
+        if (poll.IsSigned)
+        {
+            await Client.AnswerCallbackQuery(Update.CallbackQuery.Id, "Це питання вже підписано.");
+            await Client.EditMessageReplyMarkup(Update.CallbackQuery.Message.MessageId, replyMarkup: InlineKeyboardMarkup.Empty());
             return;
         }
 
