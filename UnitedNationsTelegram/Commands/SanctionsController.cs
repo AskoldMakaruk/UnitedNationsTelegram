@@ -3,13 +3,13 @@ using BotFramework.Extensions;
 using BotFramework.Services.Commands.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Services;
-using UnitedNationsTelegram.Utils;
-using Poll = UnitedNationsTelegram.Models.Poll;
-using PollType = UnitedNationsTelegram.Models.PollType;
+using UnitedNationsTelegram.Bot.Utils;
+using UnitedNationsTelegram.Services.Models;
+using UnitedNationsTelegram.Services.Services;
+using Poll = UnitedNationsTelegram.Services.Models.Poll;
+using PollType = UnitedNationsTelegram.Services.Models.PollType;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Bot.Commands;
 
 [Priority(EndpointPriority.First)]
 public class SanctionsController : UnController

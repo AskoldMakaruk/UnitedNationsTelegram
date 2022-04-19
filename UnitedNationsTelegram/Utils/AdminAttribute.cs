@@ -1,6 +1,6 @@
 using BotFramework.Abstractions;
 
-namespace UnitedNationsTelegram.Utils;
+namespace UnitedNationsTelegram.Bot.Utils;
 
 public class AdminAttribute : CommandAttribute
 {

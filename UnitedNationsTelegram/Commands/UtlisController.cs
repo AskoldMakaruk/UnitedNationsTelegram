@@ -5,11 +5,11 @@ using BotFramework.Services.Commands.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Services;
-using UnitedNationsTelegram.Utils;
+using UnitedNationsTelegram.Bot.Utils;
+using UnitedNationsTelegram.Services.Models;
+using UnitedNationsTelegram.Services.Services;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Bot.Commands;
 
 public class UtlisController : UnController
 {
@@ -139,7 +139,7 @@ public class UtlisController : UnController
         builder.AppendLine("Основні члени РадБезу:");
         foreach (var userCountry in users.OrderByDescending(a => a.Votes.Count(a => a.Created.Value > DateTime.Now.StartOfWeek(DayOfWeek.Monday))))
         {
-            if (i == MainMembersCount)
+            if (i == Constants.MainMembersCount)
             {
                 builder.AppendLine($"\nУсі інші члени РадБезу:");
             }
@@ -235,11 +235,3 @@ public class UtlisController : UnController
     }
 }
 
-public static class DateTimeExtensions
-{
-    public static DateTime StartOfWeek(this DateTime dt, DayOfWeek startOfWeek)
-    {
-        int diff = (7 + (dt.DayOfWeek - startOfWeek)) % 7;
-        return dt.AddDays(-1 * diff).Date;
-    }
-}

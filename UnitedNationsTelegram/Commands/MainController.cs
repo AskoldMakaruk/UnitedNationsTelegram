@@ -4,13 +4,13 @@ using BotFramework.Services.Commands.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Services;
-using UnitedNationsTelegram.Utils;
-using Poll = UnitedNationsTelegram.Models.Poll;
-using PollType = UnitedNationsTelegram.Models.PollType;
+using UnitedNationsTelegram.Bot.Utils;
+using UnitedNationsTelegram.Services.Models;
+using UnitedNationsTelegram.Services.Services;
+using Poll = UnitedNationsTelegram.Services.Models.Poll;
+using PollType = UnitedNationsTelegram.Services.Models.PollType;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Bot.Commands;
 
 [Priority(EndpointPriority.First)]
 public class MainController : UnController
@@ -96,7 +96,7 @@ public class MainController : UnController
         }
 
         var mainMemberNotVoted = await context.MainMembersNotVoted(ChatId, poll.PollId);
-        var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
+        var canClose = poll.Votes.Count >= Constants.MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         if (canClose)
         {
@@ -126,7 +126,7 @@ public class MainController : UnController
         else
         {
             var s = string.Join(",", mainMemberNotVoted.Select(a => $"{a.Country.EmojiFlag}{a.Country.Name} - @{a.User.UserName}"));
-            await Client.SendTextMessage($"Не виконані умови закриття:\nКількість голосів менша за необхідну ({poll.Votes.Count} < {MinMembersVotes})\nНе всі основні країни проголосували ({s}) ", replyToMessageId: poll.MessageId);
+            await Client.SendTextMessage($"Не виконані умови закриття:\nКількість голосів менша за необхідну ({poll.Votes.Count} < {Constants.MinMembersVotes})\nНе всі основні країни проголосували ({s}) ", replyToMessageId: poll.MessageId);
         }
     }
 

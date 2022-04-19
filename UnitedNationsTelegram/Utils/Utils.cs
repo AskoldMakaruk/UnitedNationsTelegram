@@ -1,4 +1,4 @@
-namespace UnitedNationsTelegram.Utils;
+namespace UnitedNationsTelegram.Bot.Utils;
 
 public static class Utils
 {

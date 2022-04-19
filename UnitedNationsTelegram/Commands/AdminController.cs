@@ -3,11 +3,13 @@ using BotFramework.Extensions;
 using BotFramework.Services.Commands.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Services;
-using UnitedNationsTelegram.Utils;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
+using UnitedNationsTelegram.Bot.Utils;
+using UnitedNationsTelegram.Services.Models;
+using UnitedNationsTelegram.Services.Services;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Bot.Commands;
 
 [Admin]
 public class AdminController : UnController
@@ -41,5 +43,15 @@ public class AdminController : UnController
             {
             }
         }
+    }
+
+
+    [Admin]
+    [Priority(EndpointPriority.First)]
+    [StartsWith("webapp")]
+    public async Task WebApp()
+    {
+        var text = Update.Message.Text.Replace("webapp", "");
+        await Client.SendTextMessage("message", replyMarkup: new ReplyKeyboardMarkup(new KeyboardButton("webapp") { WebApp = new WebAppInfo() { Url = text.Trim() } }){ResizeKeyboard = true});
     }
 }

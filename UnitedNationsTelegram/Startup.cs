@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Services;
+using UnitedNationsTelegram.Services.Models;
+using UnitedNationsTelegram.Services.Services;
 
-namespace UnitedNationsTelegram;
+namespace UnitedNationsTelegram.Bot;
 
 public static class Startup
 {

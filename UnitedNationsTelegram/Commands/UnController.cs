@@ -7,19 +7,15 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Services;
-using Poll = UnitedNationsTelegram.Models.Poll;
-using PollType = UnitedNationsTelegram.Models.PollType;
+using UnitedNationsTelegram.Services.Models;
+using UnitedNationsTelegram.Services.Services;
+using Poll = UnitedNationsTelegram.Services.Models.Poll;
+using PollType = UnitedNationsTelegram.Services.Models.PollType;
 
-namespace UnitedNationsTelegram.Commands;
+namespace UnitedNationsTelegram.Bot.Commands;
 
 public abstract class UnController : CommandControllerBase
 {
-    public const int MinMembersVotes = 15;
-    public const int MainMembersCount = 7;
-    public const int SignatureRequirement = 5;
-
     protected readonly ITelegramBotClient bot;
     protected readonly UNUser user;
     protected readonly UNContext context;
@@ -64,13 +60,13 @@ public abstract class UnController : CommandControllerBase
         }
 
         var mainMemberNotVoted = await context.MainMembersNotVoted(ch, poll.PollId);
-        var canClose = poll.Votes.Count >= MinMembersVotes || mainMemberNotVoted.Count == 0;
+        var canClose = poll.Votes.Count >= Constants.MinMembersVotes || mainMemberNotVoted.Count == 0;
 
         text += $"\nМожливо закрити: <b>{(canClose ? "так✅" : "ні❌")}</b>\n";
 
         if (!canClose)
         {
-            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} &lt; {MinMembersVotes})\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
+            text += $"Мінімальна кількість голосів: ({poll.Votes.Count} &lt; {Constants.MinMembersVotes})\nЩе не проголосували: {string.Concat(mainMemberNotVoted.Select(a => a.Country.EmojiFlag))}";
         }
 
         var keyboard = VoteMarkup();
@@ -435,7 +431,7 @@ public abstract class UnController : CommandControllerBase
         }
 
         var count = await context.MembersCount(chatId);
-        count = Math.Min(count - 1, SignatureRequirement);
+        count = Math.Min(count - 1, Constants.SignatureRequirement);
         if (poll.Signatures.Count < count)
         {
             str.AppendLine($"Залишилось підписів: {count - poll.Signatures.Count}");

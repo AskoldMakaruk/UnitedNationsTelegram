@@ -7,8 +7,9 @@ using Serilog.Events;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using UnitedNationsTelegram;
-using UnitedNationsTelegram.Models;
-using UnitedNationsTelegram.Utils;
+using UnitedNationsTelegram.Bot;
+using UnitedNationsTelegram.Bot.Utils;
+using UnitedNationsTelegram.Services.Models;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
